@@ -8,6 +8,8 @@ public class UserDashboard extends javax.swing.JFrame {
 
     private int userId;
     private String userName;
+    private boolean editMode = false;
+    private int editId = -1;
 
     public UserDashboard(int userId, String userName) {
         this.userId = userId;
@@ -47,6 +49,7 @@ public class UserDashboard extends javax.swing.JFrame {
         btnSubmit = new javax.swing.JButton();
         btnClear = new javax.swing.JButton();
         btnDeleteReport = new javax.swing.JButton();
+        btnEditReport = new javax.swing.JButton();
         jScrollPane1 = new javax.swing.JScrollPane();
         tblMyReports = new javax.swing.JTable();
         lblMyReports = new javax.swing.JLabel();
@@ -145,6 +148,17 @@ public class UserDashboard extends javax.swing.JFrame {
             }
         });
 
+        btnEditReport.setBackground(new java.awt.Color(255, 193, 7));
+        btnEditReport.setFont(new java.awt.Font("Segoe UI", 1, 11));
+        btnEditReport.setForeground(new java.awt.Color(0, 0, 0));
+        btnEditReport.setText("EDIT");
+        btnEditReport.setEnabled(false);
+        btnEditReport.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnEditReportActionPerformed(evt);
+            }
+        });
+
         lblMyReports.setFont(new java.awt.Font("Segoe UI", 1, 13));
         lblMyReports.setText("My Reports:");
 
@@ -156,6 +170,15 @@ public class UserDashboard extends javax.swing.JFrame {
             public boolean isCellEditable(int rowIndex, int columnIndex) { return false; }
         });
         tblMyReports.setRowHeight(24);
+        tblMyReports.getSelectionModel().addListSelectionListener(e -> {
+            int row = tblMyReports.getSelectedRow();
+            if (row != -1) {
+                String status = tblMyReports.getValueAt(row, 7).toString();
+                btnEditReport.setEnabled("Open".equals(status));
+            } else {
+                btnEditReport.setEnabled(false);
+            }
+        });
         jScrollPane1.setViewportView(tblMyReports);
 
         javax.swing.GroupLayout panelReportLayout = new javax.swing.GroupLayout(panelReport);
@@ -175,6 +198,8 @@ public class UserDashboard extends javax.swing.JFrame {
                         .addComponent(btnSubmit, javax.swing.GroupLayout.PREFERRED_SIZE, 90, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(btnClear, javax.swing.GroupLayout.PREFERRED_SIZE, 90, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(btnEditReport, javax.swing.GroupLayout.PREFERRED_SIZE, 90, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(btnDeleteReport, javax.swing.GroupLayout.PREFERRED_SIZE, 90, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
@@ -210,6 +235,7 @@ public class UserDashboard extends javax.swing.JFrame {
                         .addGroup(panelReportLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(btnSubmit, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addComponent(btnClear, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(btnEditReport, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addComponent(btnDeleteReport, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)))
                     .addGroup(panelReportLayout.createSequentialGroup()
                         .addComponent(lblMyReports)
@@ -442,20 +468,63 @@ public class UserDashboard extends javax.swing.JFrame {
         }
         try {
             Connection conn = DBConnection.getConnection(); if (conn == null) return;
-            PreparedStatement ps = conn.prepareStatement(
-                "INSERT INTO items (item_name, description, category, type, location, date_reported, reported_by) VALUES (?,?,?,?,?,?,?)");
-            ps.setString(1, name); ps.setString(2, txtDescription.getText().trim());
-            ps.setString(3, cmbCategory.getSelectedItem().toString());
-            ps.setString(4, cmbType.getSelectedItem().toString());
-            ps.setString(5, loc); ps.setString(6, date); ps.setInt(7, userId);
-            ps.executeUpdate();
-            JOptionPane.showMessageDialog(this, "Item reported successfully!");
+            if (editMode) {
+                // UPDATE — only own posts
+                PreparedStatement ps = conn.prepareStatement(
+                    "UPDATE items SET item_name=?, description=?, category=?, type=?, location=?, date_reported=? WHERE id=? AND reported_by=?");
+                ps.setString(1, name); ps.setString(2, txtDescription.getText().trim());
+                ps.setString(3, cmbCategory.getSelectedItem().toString());
+                ps.setString(4, cmbType.getSelectedItem().toString());
+                ps.setString(5, loc); ps.setString(6, date);
+                ps.setInt(7, editId); ps.setInt(8, userId);
+                int rows = ps.executeUpdate();
+                if (rows > 0) JOptionPane.showMessageDialog(this, "Report updated successfully!");
+                else JOptionPane.showMessageDialog(this, "Update failed. You can only edit your own Open reports.", "Error", JOptionPane.ERROR_MESSAGE);
+            } else {
+                // INSERT — new report
+                PreparedStatement ps = conn.prepareStatement(
+                    "INSERT INTO items (item_name, description, category, type, location, date_reported, reported_by) VALUES (?,?,?,?,?,?,?)");
+                ps.setString(1, name); ps.setString(2, txtDescription.getText().trim());
+                ps.setString(3, cmbCategory.getSelectedItem().toString());
+                ps.setString(4, cmbType.getSelectedItem().toString());
+                ps.setString(5, loc); ps.setString(6, date); ps.setInt(7, userId);
+                ps.executeUpdate();
+                JOptionPane.showMessageDialog(this, "Item reported successfully!");
+            }
             clearFields(); loadMyReports(); conn.close();
         } catch (SQLException e) { JOptionPane.showMessageDialog(this, "Error:\n" + e.getMessage()); }
     }
 
     private void btnClearActionPerformed(java.awt.event.ActionEvent evt) {
         clearFields();
+    }
+
+    private void btnEditReportActionPerformed(java.awt.event.ActionEvent evt) {
+        int row = tblMyReports.getSelectedRow();
+        if (row == -1) { JOptionPane.showMessageDialog(this, "Select one of your reports first!"); return; }
+        String status = tblMyReports.getValueAt(row, 7).toString();
+        if (!"Open".equals(status)) {
+            JOptionPane.showMessageDialog(this, "You can only edit reports with 'Open' status.", "Not Allowed", JOptionPane.WARNING_MESSAGE); return;
+        }
+        // Populate form fields from selected row
+        editId = Integer.parseInt(tblMyReports.getValueAt(row, 0).toString());
+        txtItemName.setText(tblMyReports.getValueAt(row, 1).toString());
+        txtDescription.setText(tblMyReports.getValueAt(row, 2).toString());
+        String cat = tblMyReports.getValueAt(row, 3).toString();
+        for (int i = 0; i < cmbCategory.getItemCount(); i++) {
+            if (cmbCategory.getItemAt(i).equals(cat)) { cmbCategory.setSelectedIndex(i); break; }
+        }
+        String type = tblMyReports.getValueAt(row, 4).toString();
+        for (int i = 0; i < cmbType.getItemCount(); i++) {
+            if (cmbType.getItemAt(i).equals(type)) { cmbType.setSelectedIndex(i); break; }
+        }
+        txtLocation.setText(tblMyReports.getValueAt(row, 5).toString());
+        txtDateReported.setText(tblMyReports.getValueAt(row, 6).toString());
+        editMode = true;
+        btnSubmit.setText("UPDATE");
+        btnSubmit.setBackground(new java.awt.Color(255, 193, 7));
+        btnSubmit.setForeground(new java.awt.Color(0, 0, 0));
+        JOptionPane.showMessageDialog(this, "Editing report ID " + editId + ". Make your changes and click UPDATE.", "Edit Mode", JOptionPane.INFORMATION_MESSAGE);
     }
 
     private void btnDeleteReportActionPerformed(java.awt.event.ActionEvent evt) {
@@ -524,11 +593,18 @@ public class UserDashboard extends javax.swing.JFrame {
     private void clearFields() {
         txtItemName.setText(""); txtDescription.setText(""); cmbCategory.setSelectedIndex(0);
         cmbType.setSelectedIndex(0); txtLocation.setText(""); txtDateReported.setText("");
+        editMode = false; editId = -1;
+        btnSubmit.setText("SUBMIT");
+        btnSubmit.setBackground(new java.awt.Color(40, 167, 69));
+        btnSubmit.setForeground(new java.awt.Color(255, 255, 255));
+        btnEditReport.setEnabled(false);
+        tblMyReports.clearSelection();
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnClear;
     private javax.swing.JButton btnDeleteReport;
+    private javax.swing.JButton btnEditReport;
     private javax.swing.JButton btnLogout;
     private javax.swing.JButton btnRequestClaim;
     private javax.swing.JButton btnSearchFound;

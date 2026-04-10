@@ -5,6 +5,10 @@
         <group>
             <file>file:/C:/Users/Desktop/Documents/NetBeansProjects/LostAndFoundSystem/src/lostandfound/Main.java</file>
             <file>file:/C:/Users/Desktop/Documents/NetBeansProjects/LostAndFoundSystem/src/lostandfound/RegisterForm.java</file>
+            <file>file:/C:/Users/Desktop/Documents/NetBeansProjects/LostAndFoundSystem/src/lostandfound/UserDashboard.java</file>
+            <file>file:/C:/Users/Desktop/Documents/NetBeansProjects/LostAndFoundSystem/src/lostandfound/LoginForm.java</file>
+            <file>file:/C:/Users/Desktop/Documents/NetBeansProjects/LostAndFoundSystem/src/lostandfound/DBConnection.java</file>
+            <file>file:/C:/Users/Desktop/Documents/NetBeansProjects/LostAndFoundSystem/src/lostandfound/AdminDashboard.java</file>
         </group>
     </open-files>
 </project-private>

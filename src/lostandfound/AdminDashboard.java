@@ -39,6 +39,8 @@ public class AdminDashboard extends javax.swing.JFrame {
         txtSearch = new javax.swing.JTextField();
         btnSearch = new javax.swing.JButton();
         btnDeleteItem = new javax.swing.JButton();
+        btnMarkResolved = new javax.swing.JButton();
+        btnFindMatch = new javax.swing.JButton();
         btnRefreshItems = new javax.swing.JButton();
         jScrollPane1 = new javax.swing.JScrollPane();
         tblItems = new javax.swing.JTable();
@@ -93,7 +95,7 @@ public class AdminDashboard extends javax.swing.JFrame {
         // ====== TAB 1: ALL ITEMS ======
         lblItemsInfo.setFont(new java.awt.Font("Segoe UI", 2, 11));
         lblItemsInfo.setForeground(new java.awt.Color(108, 117, 125));
-        lblItemsInfo.setText("View all items reported by users. Admin can delete items but cannot edit user reports.");
+        lblItemsInfo.setText("Select a Lost item: use FIND MATCH to see possible Found matches, or MARK RESOLVED when the item has been returned.");
 
         txtSearch.setFont(new java.awt.Font("Segoe UI", 0, 13));
 
@@ -127,6 +129,26 @@ public class AdminDashboard extends javax.swing.JFrame {
             }
         });
 
+        btnMarkResolved.setBackground(new java.awt.Color(23, 162, 184));
+        btnMarkResolved.setFont(new java.awt.Font("Segoe UI", 1, 11));
+        btnMarkResolved.setForeground(new java.awt.Color(255, 255, 255));
+        btnMarkResolved.setText("MARK RESOLVED");
+        btnMarkResolved.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnMarkResolvedActionPerformed(evt);
+            }
+        });
+
+        btnFindMatch.setBackground(new java.awt.Color(111, 66, 193));
+        btnFindMatch.setFont(new java.awt.Font("Segoe UI", 1, 11));
+        btnFindMatch.setForeground(new java.awt.Color(255, 255, 255));
+        btnFindMatch.setText("FIND MATCH");
+        btnFindMatch.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnFindMatchActionPerformed(evt);
+            }
+        });
+
         tblItems.setFont(new java.awt.Font("Segoe UI", 0, 11));
         tblItems.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {},
@@ -146,13 +168,17 @@ public class AdminDashboard extends javax.swing.JFrame {
                 .addGroup(panelItemsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(lblItemsInfo, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addGroup(panelItemsLayout.createSequentialGroup()
-                        .addComponent(txtSearch, javax.swing.GroupLayout.PREFERRED_SIZE, 500, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(txtSearch, javax.swing.GroupLayout.PREFERRED_SIZE, 300, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(btnSearch, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(btnSearch, javax.swing.GroupLayout.PREFERRED_SIZE, 90, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(btnDeleteItem, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(btnMarkResolved, javax.swing.GroupLayout.PREFERRED_SIZE, 140, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(btnRefreshItems, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addComponent(btnFindMatch, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(btnDeleteItem, javax.swing.GroupLayout.PREFERRED_SIZE, 110, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(btnRefreshItems, javax.swing.GroupLayout.PREFERRED_SIZE, 90, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addComponent(jScrollPane1))
                 .addGap(15, 15, 15))
         );
@@ -165,6 +191,8 @@ public class AdminDashboard extends javax.swing.JFrame {
                 .addGroup(panelItemsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(txtSearch, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(btnSearch, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(btnMarkResolved, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(btnFindMatch, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(btnDeleteItem, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(btnRefreshItems, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -486,6 +514,73 @@ public class AdminDashboard extends javax.swing.JFrame {
     }
 
     // ==================== ACTIONS ====================
+    private void btnMarkResolvedActionPerformed(java.awt.event.ActionEvent evt) {
+        int row = tblItems.getSelectedRow();
+        if (row == -1) { JOptionPane.showMessageDialog(this, "Select an item first!"); return; }
+        String type = tblItems.getValueAt(row, 4).toString();
+        String status = tblItems.getValueAt(row, 8).toString();
+        if (!"Lost".equals(type)) {
+            JOptionPane.showMessageDialog(this, "Only Lost items can be marked as Resolved.", "Not Allowed", JOptionPane.WARNING_MESSAGE); return;
+        }
+        if ("Resolved".equals(status)) {
+            JOptionPane.showMessageDialog(this, "This item is already Resolved.", "Info", JOptionPane.INFORMATION_MESSAGE); return;
+        }
+        int id = Integer.parseInt(tblItems.getValueAt(row, 0).toString());
+        String itemName = tblItems.getValueAt(row, 1).toString();
+        if (JOptionPane.showConfirmDialog(this,
+            "Mark \"" + itemName + "\" as Resolved?\n(This means the lost item has been returned to the owner.)",
+            "Confirm", JOptionPane.YES_NO_OPTION) != 0) return;
+        try {
+            Connection conn = DBConnection.getConnection(); if (conn == null) return;
+            PreparedStatement ps = conn.prepareStatement("UPDATE items SET status='Resolved' WHERE id=? AND type='Lost'");
+            ps.setInt(1, id); ps.executeUpdate();
+            JOptionPane.showMessageDialog(this, "Item marked as Resolved!");
+            loadItems(); conn.close();
+        } catch (SQLException e) { showError(e); }
+    }
+
+    private void btnFindMatchActionPerformed(java.awt.event.ActionEvent evt) {
+        int row = tblItems.getSelectedRow();
+        if (row == -1) { JOptionPane.showMessageDialog(this, "Select a Lost item first!"); return; }
+        String type = tblItems.getValueAt(row, 4).toString();
+        if (!"Lost".equals(type)) {
+            JOptionPane.showMessageDialog(this, "Please select a Lost item to find matches for.", "Not Allowed", JOptionPane.WARNING_MESSAGE); return;
+        }
+        String category = tblItems.getValueAt(row, 3).toString();
+        String location = tblItems.getValueAt(row, 5).toString();
+        String lostName = tblItems.getValueAt(row, 1).toString();
+        try {
+            Connection conn = DBConnection.getConnection(); if (conn == null) return;
+            PreparedStatement ps = conn.prepareStatement(
+                "SELECT i.id, i.item_name, i.description, i.location, i.date_reported, u.full_name AS reporter " +
+                "FROM items i JOIN users u ON i.reported_by=u.id " +
+                "WHERE i.type='Found' AND i.status='Open' AND i.category=? ORDER BY i.id DESC");
+            ps.setString(1, category);
+            ResultSet rs = ps.executeQuery();
+            StringBuilder sb = new StringBuilder();
+            sb.append("Lost Item: \"").append(lostName).append("\" (").append(category).append(")\n");
+            sb.append("Location reported: ").append(location).append("\n\n");
+            sb.append("=== Possible Matches (Found, same category) ===\n\n");
+            int count = 0;
+            while (rs.next()) {
+                count++;
+                sb.append("ID #").append(rs.getInt("id")).append(" — ").append(rs.getString("item_name")).append("\n");
+                sb.append("  Description : ").append(rs.getString("description")).append("\n");
+                sb.append("  Location    : ").append(rs.getString("location")).append("\n");
+                sb.append("  Date Found  : ").append(rs.getString("date_reported")).append("\n");
+                sb.append("  Reported By : ").append(rs.getString("reporter")).append("\n\n");
+            }
+            if (count == 0) sb.append("No open Found items found with category: ").append(category);
+            conn.close();
+
+            JTextArea ta = new JTextArea(sb.toString(), 18, 55);
+            ta.setEditable(false);
+            ta.setFont(new java.awt.Font("Monospaced", 0, 12));
+            JOptionPane.showMessageDialog(this, new JScrollPane(ta),
+                "Match Results for \"" + lostName + "\"", JOptionPane.INFORMATION_MESSAGE);
+        } catch (SQLException e) { showError(e); }
+    }
+
     private void btnSearchActionPerformed(java.awt.event.ActionEvent evt) { loadItems(); }
 
     private void btnDeleteItemActionPerformed(java.awt.event.ActionEvent evt) {
@@ -657,6 +752,8 @@ public class AdminDashboard extends javax.swing.JFrame {
     private javax.swing.JButton btnApprove;
     private javax.swing.JButton btnBackup;
     private javax.swing.JButton btnDeleteItem;
+    private javax.swing.JButton btnMarkResolved;
+    private javax.swing.JButton btnFindMatch;
     private javax.swing.JButton btnDeleteUser;
     private javax.swing.JButton btnLogout;
     private javax.swing.JButton btnRefreshClaims;

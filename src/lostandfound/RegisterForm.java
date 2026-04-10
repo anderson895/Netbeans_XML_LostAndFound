@@ -31,37 +31,37 @@ public class RegisterForm extends javax.swing.JFrame {
         setTitle("Lost and Found - Register");
         setResizable(false);
 
-        lblTitle.setFont(new java.awt.Font("Segoe UI", 1, 22));
+        lblTitle.setFont(new java.awt.Font("Segoe UI", 1, 22)); // NOI18N
         lblTitle.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         lblTitle.setText("CREATE ACCOUNT");
 
-        lblNote.setFont(new java.awt.Font("Segoe UI", 2, 11));
+        lblNote.setFont(new java.awt.Font("Segoe UI", 2, 11)); // NOI18N
         lblNote.setForeground(new java.awt.Color(108, 117, 125));
         lblNote.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         lblNote.setText("(All new accounts are registered as User)");
 
-        lblFullName.setFont(new java.awt.Font("Segoe UI", 1, 12));
+        lblFullName.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         lblFullName.setText("Full Name:");
 
-        txtFullName.setFont(new java.awt.Font("Segoe UI", 0, 14));
+        txtFullName.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
 
-        lblUsername.setFont(new java.awt.Font("Segoe UI", 1, 12));
+        lblUsername.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         lblUsername.setText("Username:");
 
-        txtUsername.setFont(new java.awt.Font("Segoe UI", 0, 14));
+        txtUsername.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
 
-        lblPassword.setFont(new java.awt.Font("Segoe UI", 1, 12));
+        lblPassword.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         lblPassword.setText("Password:");
 
-        txtPassword.setFont(new java.awt.Font("Segoe UI", 0, 14));
+        txtPassword.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
 
-        lblConfirm.setFont(new java.awt.Font("Segoe UI", 1, 12));
+        lblConfirm.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         lblConfirm.setText("Confirm Password:");
 
-        txtConfirm.setFont(new java.awt.Font("Segoe UI", 0, 14));
+        txtConfirm.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
 
         btnRegister.setBackground(new java.awt.Color(40, 167, 69));
-        btnRegister.setFont(new java.awt.Font("Segoe UI", 1, 13));
+        btnRegister.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
         btnRegister.setForeground(new java.awt.Color(255, 255, 255));
         btnRegister.setText("REGISTER");
         btnRegister.addActionListener(new java.awt.event.ActionListener() {
@@ -71,7 +71,7 @@ public class RegisterForm extends javax.swing.JFrame {
         });
 
         btnBack.setBackground(new java.awt.Color(108, 117, 125));
-        btnBack.setFont(new java.awt.Font("Segoe UI", 1, 13));
+        btnBack.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
         btnBack.setForeground(new java.awt.Color(255, 255, 255));
         btnBack.setText("BACK TO LOGIN");
         btnBack.addActionListener(new java.awt.event.ActionListener() {
