@@ -7,10 +7,9 @@ import javax.swing.JOptionPane;
 
 public class DBConnection {
     public static Connection getConnection() {
-        Connection conn = null;
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
-            conn = DriverManager.getConnection(
+            return DriverManager.getConnection(
                 "jdbc:mysql://localhost:3306/lost_and_found_db", "root", "");
         } catch (ClassNotFoundException e) {
             JOptionPane.showMessageDialog(null,
@@ -21,6 +20,6 @@ public class DBConnection {
                 "Database Connection Failed!\n" + e.getMessage(),
                 "Error", JOptionPane.ERROR_MESSAGE);
         }
-        return conn;
+        return null;
     }
 }

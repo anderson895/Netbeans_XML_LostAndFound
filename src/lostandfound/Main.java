@@ -2,6 +2,6 @@ package lostandfound;
 
 public class Main {
     public static void main(String[] args) {
-        new LoginForm().setVisible(true);
+        java.awt.EventQueue.invokeLater(() -> new LoginForm().setVisible(true));
     }
 }

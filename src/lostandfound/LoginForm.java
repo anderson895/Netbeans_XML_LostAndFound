@@ -30,7 +30,7 @@ public class LoginForm extends javax.swing.JFrame {
 
         lblTitle.setFont(new java.awt.Font("Segoe UI", 1, 24));
         lblTitle.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        lblTitle.setText("LOST AND FOUND");
+        lblTitle.setText("LOST AND FOUND SYSTEM");
 
         lblSubtitle.setFont(new java.awt.Font("Segoe UI", 0, 13));
         lblSubtitle.setForeground(new java.awt.Color(108, 117, 125));
@@ -70,7 +70,7 @@ public class LoginForm extends javax.swing.JFrame {
         lblInfo.setFont(new java.awt.Font("Segoe UI", 2, 11));
         lblInfo.setForeground(new java.awt.Color(150, 150, 160));
         lblInfo.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        lblInfo.setText("Reporter = add/edit items  |  Claimer = claim items");
+        lblInfo.setText("Admin = manage all  |  User = report & claim items");
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -117,7 +117,7 @@ public class LoginForm extends javax.swing.JFrame {
         );
 
         pack();
-    }//GEN-END:initComponents
+    }// </editor-fold>//GEN-END:initComponents
 
     private void btnLoginActionPerformed(java.awt.event.ActionEvent evt) {
         String user = txtUsername.getText().trim();
@@ -127,21 +127,24 @@ public class LoginForm extends javax.swing.JFrame {
         }
         try {
             Connection conn = DBConnection.getConnection(); if (conn == null) return;
-            PreparedStatement pst = conn.prepareStatement("SELECT * FROM users WHERE username=? AND password=?");
+            PreparedStatement pst = conn.prepareStatement(
+                "SELECT id, full_name, role FROM users WHERE username=? AND password=?");
             pst.setString(1, user); pst.setString(2, pass);
             ResultSet rs = pst.executeQuery();
             if (rs.next()) {
+                int userId = rs.getInt("id");
                 String name = rs.getString("full_name");
                 String role = rs.getString("role");
                 JOptionPane.showMessageDialog(this, "Welcome, " + name + "!\nRole: " + role);
                 dispose();
-                if (role.equals("Reporter")) {
-                    new ReporterDashboard(name).setVisible(true);
+                if ("Admin".equals(role)) {
+                    new AdminDashboard(userId, name).setVisible(true);
                 } else {
-                    new ClaimerDashboard(name).setVisible(true);
+                    new UserDashboard(userId, name).setVisible(true);
                 }
             } else {
-                JOptionPane.showMessageDialog(this, "Invalid username or password!", "Login Failed", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Invalid username or password!",
+                    "Login Failed", JOptionPane.ERROR_MESSAGE);
             }
             conn.close();
         } catch (SQLException e) {

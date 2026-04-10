@@ -15,6 +15,7 @@ public class RegisterForm extends javax.swing.JFrame {
     private void initComponents() {
 
         lblTitle = new javax.swing.JLabel();
+        lblNote = new javax.swing.JLabel();
         lblFullName = new javax.swing.JLabel();
         txtFullName = new javax.swing.JTextField();
         lblUsername = new javax.swing.JLabel();
@@ -23,8 +24,6 @@ public class RegisterForm extends javax.swing.JFrame {
         txtPassword = new javax.swing.JPasswordField();
         lblConfirm = new javax.swing.JLabel();
         txtConfirm = new javax.swing.JPasswordField();
-        lblRole = new javax.swing.JLabel();
-        cmbRole = new javax.swing.JComboBox<>();
         btnRegister = new javax.swing.JButton();
         btnBack = new javax.swing.JButton();
 
@@ -35,6 +34,11 @@ public class RegisterForm extends javax.swing.JFrame {
         lblTitle.setFont(new java.awt.Font("Segoe UI", 1, 22));
         lblTitle.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         lblTitle.setText("CREATE ACCOUNT");
+
+        lblNote.setFont(new java.awt.Font("Segoe UI", 2, 11));
+        lblNote.setForeground(new java.awt.Color(108, 117, 125));
+        lblNote.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        lblNote.setText("(All new accounts are registered as User)");
 
         lblFullName.setFont(new java.awt.Font("Segoe UI", 1, 12));
         lblFullName.setText("Full Name:");
@@ -55,12 +59,6 @@ public class RegisterForm extends javax.swing.JFrame {
         lblConfirm.setText("Confirm Password:");
 
         txtConfirm.setFont(new java.awt.Font("Segoe UI", 0, 14));
-
-        lblRole.setFont(new java.awt.Font("Segoe UI", 1, 12));
-        lblRole.setText("Role:");
-
-        cmbRole.setFont(new java.awt.Font("Segoe UI", 0, 14));
-        cmbRole.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Reporter", "Claimer" }));
 
         btnRegister.setBackground(new java.awt.Color(40, 167, 69));
         btnRegister.setFont(new java.awt.Font("Segoe UI", 1, 13));
@@ -90,11 +88,15 @@ public class RegisterForm extends javax.swing.JFrame {
                 .addGap(70, 70, 70)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(lblTitle, javax.swing.GroupLayout.PREFERRED_SIZE, 300, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(lblFullName).addComponent(txtFullName, javax.swing.GroupLayout.PREFERRED_SIZE, 300, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(lblUsername).addComponent(txtUsername, javax.swing.GroupLayout.PREFERRED_SIZE, 300, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(lblPassword).addComponent(txtPassword, javax.swing.GroupLayout.PREFERRED_SIZE, 300, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(lblConfirm).addComponent(txtConfirm, javax.swing.GroupLayout.PREFERRED_SIZE, 300, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(lblRole).addComponent(cmbRole, javax.swing.GroupLayout.PREFERRED_SIZE, 300, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(lblNote, javax.swing.GroupLayout.PREFERRED_SIZE, 300, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(lblFullName)
+                    .addComponent(txtFullName, javax.swing.GroupLayout.PREFERRED_SIZE, 300, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(lblUsername)
+                    .addComponent(txtUsername, javax.swing.GroupLayout.PREFERRED_SIZE, 300, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(lblPassword)
+                    .addComponent(txtPassword, javax.swing.GroupLayout.PREFERRED_SIZE, 300, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(lblConfirm)
+                    .addComponent(txtConfirm, javax.swing.GroupLayout.PREFERRED_SIZE, 300, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(btnRegister, javax.swing.GroupLayout.PREFERRED_SIZE, 145, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -104,17 +106,26 @@ public class RegisterForm extends javax.swing.JFrame {
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addGap(18, 18, 18).addComponent(lblTitle, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(15, 15, 15).addComponent(lblFullName).addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGap(18, 18, 18)
+                .addComponent(lblTitle, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(lblNote)
+                .addGap(15, 15, 15)
+                .addComponent(lblFullName)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(txtFullName, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(8, 8, 8).addComponent(lblUsername).addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGap(8, 8, 8)
+                .addComponent(lblUsername)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(txtUsername, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(8, 8, 8).addComponent(lblPassword).addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGap(8, 8, 8)
+                .addComponent(lblPassword)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(txtPassword, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(8, 8, 8).addComponent(lblConfirm).addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGap(8, 8, 8)
+                .addComponent(lblConfirm)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(txtConfirm, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(8, 8, 8).addComponent(lblRole).addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(cmbRole, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(15, 15, 15)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(btnRegister, javax.swing.GroupLayout.PREFERRED_SIZE, 38, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -123,14 +134,13 @@ public class RegisterForm extends javax.swing.JFrame {
         );
 
         pack();
-    }//GEN-END:initComponents
+    }// </editor-fold>//GEN-END:initComponents
 
     private void btnRegisterActionPerformed(java.awt.event.ActionEvent evt) {
         String name = txtFullName.getText().trim();
         String user = txtUsername.getText().trim();
         String pass = new String(txtPassword.getPassword()).trim();
         String conf = new String(txtConfirm.getPassword()).trim();
-        String role = cmbRole.getSelectedItem().toString();
 
         if (name.isEmpty() || user.isEmpty() || pass.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Fill in all fields!"); return;
@@ -146,12 +156,14 @@ public class RegisterForm extends javax.swing.JFrame {
             PreparedStatement chk = conn.prepareStatement("SELECT id FROM users WHERE username=?");
             chk.setString(1, user);
             if (chk.executeQuery().next()) {
-                JOptionPane.showMessageDialog(this, "Username already taken!", "Error", JOptionPane.ERROR_MESSAGE); conn.close(); return;
+                JOptionPane.showMessageDialog(this, "Username already taken!", "Error", JOptionPane.ERROR_MESSAGE);
+                conn.close(); return;
             }
-            PreparedStatement pst = conn.prepareStatement("INSERT INTO users (full_name,username,password,role) VALUES (?,?,?,?)");
-            pst.setString(1, name); pst.setString(2, user); pst.setString(3, pass); pst.setString(4, role);
+            PreparedStatement pst = conn.prepareStatement(
+                "INSERT INTO users (full_name, username, password, role) VALUES (?,?,?,'User')");
+            pst.setString(1, name); pst.setString(2, user); pst.setString(3, pass);
             pst.executeUpdate();
-            JOptionPane.showMessageDialog(this, "Account created! You can now login.\nYour role: " + role);
+            JOptionPane.showMessageDialog(this, "Account created! You can now login.\nYour role: User");
             dispose(); new LoginForm().setVisible(true); conn.close();
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(this, "Error:\n" + e.getMessage());
@@ -165,11 +177,10 @@ public class RegisterForm extends javax.swing.JFrame {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnBack;
     private javax.swing.JButton btnRegister;
-    private javax.swing.JComboBox<String> cmbRole;
     private javax.swing.JLabel lblConfirm;
     private javax.swing.JLabel lblFullName;
+    private javax.swing.JLabel lblNote;
     private javax.swing.JLabel lblPassword;
-    private javax.swing.JLabel lblRole;
     private javax.swing.JLabel lblTitle;
     private javax.swing.JLabel lblUsername;
     private javax.swing.JPasswordField txtConfirm;
