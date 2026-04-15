@@ -1,6 +1,8 @@
 package lostandfound;
 
+import java.awt.*;
 import java.sql.*;
+import java.util.Calendar;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 
@@ -8,393 +10,321 @@ public class UserDashboard extends javax.swing.JFrame {
 
     private int userId;
     private String userName;
-    private boolean editMode = false;
-    private int editId = -1;
+
+    // ── Colors ──
+    private static final Color PRIMARY     = new Color(25, 55, 109);
+    private static final Color ACCENT      = new Color(0, 150, 136);
+    private static final Color SIDEBAR_BG  = new Color(30, 42, 56);
+    private static final Color SIDEBAR_SEL = new Color(44, 62, 80);
+    private static final Color WHITE       = Color.WHITE;
+    private static final Color BG          = new Color(236, 240, 245);
+    private static final Color RED         = new Color(220, 53, 69);
+    private static final Color GREEN       = new Color(40, 167, 69);
+    private static final Color BLUE        = new Color(0, 123, 255);
+    private static final Color GRAY        = new Color(108, 117, 125);
+    private static final Color TEXT_DARK   = new Color(33, 37, 41);
+
+    // ── Components ──
+    private JTabbedPane tabbedPane;
+    private JTextField txtItemName, txtDescription, txtSearchFound;
+    private JComboBox<String> cmbCategory, cmbType, cmbLocation;
+    private JComboBox<String> cmbYear, cmbMonth, cmbDay;
+    private JTable tblMyReports, tblFoundItems, tblMyClaims;
+    private JButton btnSubmit;
+
+    // ── ASCOT Locations ──
+    private static final String[] LOCATIONS = {
+        "ASCOT ENTRANCE", "ASCOT EXIT", "ASCOT HOSTEL",
+        "Information and Communication Technology Center (ICTC)",
+        "Engineering Building", "General Education Buildings",
+        "Senator Edgardo Angara Hall"
+    };
 
     public UserDashboard(int userId, String userName) {
         this.userId = userId;
         this.userName = userName;
         initComponents();
         setLocationRelativeTo(null);
-        setTitle("User Dashboard - " + userName);
-        lblUser.setText("User: " + userName);
         loadMyReports();
         loadFoundItems();
         loadMyClaims();
     }
 
-    @SuppressWarnings("unchecked")
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
-
-        lblHeader = new javax.swing.JLabel();
-        lblUser = new javax.swing.JLabel();
-        btnLogout = new javax.swing.JButton();
-        tabbedPane = new javax.swing.JTabbedPane();
-
-        // === Tab 1: Report Item ===
-        panelReport = new javax.swing.JPanel();
-        lblItemName = new javax.swing.JLabel();
-        txtItemName = new javax.swing.JTextField();
-        lblDesc = new javax.swing.JLabel();
-        txtDescription = new javax.swing.JTextField();
-        lblCategory = new javax.swing.JLabel();
-        cmbCategory = new javax.swing.JComboBox<>();
-        lblType = new javax.swing.JLabel();
-        cmbType = new javax.swing.JComboBox<>();
-        lblLocation = new javax.swing.JLabel();
-        txtLocation = new javax.swing.JTextField();
-        lblDate = new javax.swing.JLabel();
-        txtDateReported = new javax.swing.JTextField();
-        btnSubmit = new javax.swing.JButton();
-        btnClear = new javax.swing.JButton();
-        btnDeleteReport = new javax.swing.JButton();
-        btnEditReport = new javax.swing.JButton();
-        jScrollPane1 = new javax.swing.JScrollPane();
-        tblMyReports = new javax.swing.JTable();
-        lblMyReports = new javax.swing.JLabel();
-
-        // === Tab 2: Browse Found Items ===
-        panelBrowse = new javax.swing.JPanel();
-        lblBrowseInfo = new javax.swing.JLabel();
-        txtSearchFound = new javax.swing.JTextField();
-        btnSearchFound = new javax.swing.JButton();
-        btnRequestClaim = new javax.swing.JButton();
-        jScrollPane2 = new javax.swing.JScrollPane();
-        tblFoundItems = new javax.swing.JTable();
-
-        // === Tab 3: My Claims ===
-        panelClaims = new javax.swing.JPanel();
-        lblClaimsInfo = new javax.swing.JLabel();
-        jScrollPane3 = new javax.swing.JScrollPane();
-        tblMyClaims = new javax.swing.JTable();
-
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("User Dashboard");
-        setResizable(false);
+        setTitle("User Dashboard - " + userName);
+        setMinimumSize(new Dimension(900, 550));
+        setPreferredSize(new Dimension(1100, 650));
 
-        lblHeader.setFont(new java.awt.Font("Segoe UI", 1, 18));
-        lblHeader.setForeground(new java.awt.Color(0, 123, 255));
-        lblHeader.setText("USER DASHBOARD");
+        // ====== SIDEBAR ======
+        JPanel sidebar = new JPanel();
+        sidebar.setBackground(SIDEBAR_BG);
+        sidebar.setPreferredSize(new Dimension(230, 0));
+        sidebar.setMinimumSize(new Dimension(210, 0));
+        sidebar.setMaximumSize(new Dimension(230, Integer.MAX_VALUE));
+        sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
 
-        lblUser.setFont(new java.awt.Font("Segoe UI", 0, 11));
-        lblUser.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
-        lblUser.setText("User:");
+        // ── Logo / header area ──
+        JPanel logoPanel = new JPanel();
+        logoPanel.setBackground(SIDEBAR_BG);
+        logoPanel.setLayout(new BoxLayout(logoPanel, BoxLayout.Y_AXIS));
+        logoPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 15, 20));
+        logoPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        logoPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 90));
 
-        btnLogout.setBackground(new java.awt.Color(220, 53, 69));
-        btnLogout.setFont(new java.awt.Font("Segoe UI", 1, 11));
-        btnLogout.setForeground(new java.awt.Color(255, 255, 255));
-        btnLogout.setText("LOGOUT");
-        btnLogout.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnLogoutActionPerformed(evt);
+        JLabel lblLogo = new JLabel("LOST & FOUND");
+        lblLogo.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        lblLogo.setForeground(WHITE);
+        lblLogo.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel lblRole = new JLabel("USER PANEL");
+        lblRole.setFont(new Font("Segoe UI", Font.BOLD, 10));
+        lblRole.setForeground(new Color(100, 160, 220));
+        lblRole.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel lblName = new JLabel(userName);
+        lblName.setFont(new Font("Segoe UI", Font.ITALIC, 11));
+        lblName.setForeground(new Color(180, 190, 200));
+        lblName.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        logoPanel.add(lblLogo);
+        logoPanel.add(Box.createVerticalStrut(4));
+        logoPanel.add(lblRole);
+        logoPanel.add(Box.createVerticalStrut(2));
+        logoPanel.add(lblName);
+
+        JSeparator sep = new JSeparator();
+        sep.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
+        sep.setForeground(new Color(60, 75, 95));
+        sep.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JButton btnReport    = makeSidebarBtn("Report Item");
+        JButton btnBrowse    = makeSidebarBtn("Browse Found Items");
+        JButton btnClaims    = makeSidebarBtn("My Claims");
+
+        JButton btnLogout = new JButton("LOGOUT");
+        UIHelper.styleLogoutButton(btnLogout, RED);
+
+        sidebar.add(logoPanel);
+        sidebar.add(sep);
+        sidebar.add(Box.createVerticalStrut(8));
+        sidebar.add(btnReport);
+        sidebar.add(btnBrowse);
+        sidebar.add(btnClaims);
+        sidebar.add(Box.createVerticalGlue());
+        sidebar.add(btnLogout);
+        sidebar.add(Box.createVerticalStrut(12));
+
+        // ====== CONTENT AREA ======
+        tabbedPane = new JTabbedPane();
+        tabbedPane.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        tabbedPane.setBackground(BG);
+        tabbedPane.addTab("Report Item", buildReportPanel());
+        tabbedPane.addTab("Browse Found Items", buildBrowsePanel());
+        tabbedPane.addTab("My Claims", buildClaimsPanel());
+
+        tabbedPane.addChangeListener(e -> {
+            int idx = tabbedPane.getSelectedIndex();
+            if (idx == 0) loadMyReports();
+            else if (idx == 1) loadFoundItems();
+            else if (idx == 2) loadMyClaims();
+        });
+
+        // ── Sidebar button actions ──
+        btnReport.addActionListener(e -> tabbedPane.setSelectedIndex(0));
+        btnBrowse.addActionListener(e -> tabbedPane.setSelectedIndex(1));
+        btnClaims.addActionListener(e -> tabbedPane.setSelectedIndex(2));
+        btnLogout.addActionListener(e -> {
+            if (JOptionPane.showConfirmDialog(this, "Logout?", "Confirm", JOptionPane.YES_NO_OPTION) == 0) {
+                dispose(); new LoginForm().setVisible(true);
             }
         });
 
-        // ====== TAB 1: REPORT ITEM ======
-        lblItemName.setFont(new java.awt.Font("Segoe UI", 1, 12));
-        lblItemName.setText("Item Name: *");
-        txtItemName.setFont(new java.awt.Font("Segoe UI", 0, 13));
-
-        lblDesc.setFont(new java.awt.Font("Segoe UI", 1, 12));
-        lblDesc.setText("Description:");
-        txtDescription.setFont(new java.awt.Font("Segoe UI", 0, 13));
-
-        lblCategory.setFont(new java.awt.Font("Segoe UI", 1, 12));
-        lblCategory.setText("Category:");
-        cmbCategory.setFont(new java.awt.Font("Segoe UI", 0, 13));
-        cmbCategory.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Electronics", "Clothing", "Accessories", "Documents", "Others" }));
-
-        lblType.setFont(new java.awt.Font("Segoe UI", 1, 12));
-        lblType.setText("Type: *");
-        cmbType.setFont(new java.awt.Font("Segoe UI", 0, 13));
-        cmbType.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Lost", "Found" }));
-
-        lblLocation.setFont(new java.awt.Font("Segoe UI", 1, 12));
-        lblLocation.setText("Location: *");
-        txtLocation.setFont(new java.awt.Font("Segoe UI", 0, 13));
-
-        lblDate.setFont(new java.awt.Font("Segoe UI", 1, 12));
-        lblDate.setText("Date (YYYY-MM-DD): *");
-        txtDateReported.setFont(new java.awt.Font("Segoe UI", 0, 13));
-
-        btnSubmit.setBackground(new java.awt.Color(40, 167, 69));
-        btnSubmit.setFont(new java.awt.Font("Segoe UI", 1, 11));
-        btnSubmit.setForeground(new java.awt.Color(255, 255, 255));
-        btnSubmit.setText("SUBMIT");
-        btnSubmit.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnSubmitActionPerformed(evt);
-            }
-        });
-
-        btnClear.setBackground(new java.awt.Color(108, 117, 125));
-        btnClear.setFont(new java.awt.Font("Segoe UI", 1, 11));
-        btnClear.setForeground(new java.awt.Color(255, 255, 255));
-        btnClear.setText("CLEAR");
-        btnClear.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnClearActionPerformed(evt);
-            }
-        });
-
-        btnDeleteReport.setBackground(new java.awt.Color(220, 53, 69));
-        btnDeleteReport.setFont(new java.awt.Font("Segoe UI", 1, 11));
-        btnDeleteReport.setForeground(new java.awt.Color(255, 255, 255));
-        btnDeleteReport.setText("DELETE");
-        btnDeleteReport.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnDeleteReportActionPerformed(evt);
-            }
-        });
-
-        btnEditReport.setBackground(new java.awt.Color(255, 193, 7));
-        btnEditReport.setFont(new java.awt.Font("Segoe UI", 1, 11));
-        btnEditReport.setForeground(new java.awt.Color(0, 0, 0));
-        btnEditReport.setText("EDIT");
-        btnEditReport.setEnabled(false);
-        btnEditReport.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnEditReportActionPerformed(evt);
-            }
-        });
-
-        lblMyReports.setFont(new java.awt.Font("Segoe UI", 1, 13));
-        lblMyReports.setText("My Reports:");
-
-        tblMyReports.setFont(new java.awt.Font("Segoe UI", 0, 11));
-        tblMyReports.setModel(new javax.swing.table.DefaultTableModel(
-            new Object [][] {},
-            new String [] { "ID", "Item Name", "Description", "Category", "Type", "Location", "Date", "Status" }
-        ) {
-            public boolean isCellEditable(int rowIndex, int columnIndex) { return false; }
-        });
-        tblMyReports.setRowHeight(24);
-        tblMyReports.getSelectionModel().addListSelectionListener(e -> {
-            int row = tblMyReports.getSelectedRow();
-            if (row != -1) {
-                String status = tblMyReports.getValueAt(row, 7).toString();
-                btnEditReport.setEnabled("Open".equals(status));
-            } else {
-                btnEditReport.setEnabled(false);
-            }
-        });
-        jScrollPane1.setViewportView(tblMyReports);
-
-        javax.swing.GroupLayout panelReportLayout = new javax.swing.GroupLayout(panelReport);
-        panelReport.setLayout(panelReportLayout);
-        panelReportLayout.setHorizontalGroup(
-            panelReportLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(panelReportLayout.createSequentialGroup()
-                .addGap(15, 15, 15)
-                .addGroup(panelReportLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(lblItemName).addComponent(txtItemName, javax.swing.GroupLayout.PREFERRED_SIZE, 300, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(lblDesc).addComponent(txtDescription, javax.swing.GroupLayout.PREFERRED_SIZE, 300, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(lblCategory).addComponent(cmbCategory, javax.swing.GroupLayout.PREFERRED_SIZE, 300, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(lblType).addComponent(cmbType, javax.swing.GroupLayout.PREFERRED_SIZE, 300, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(lblLocation).addComponent(txtLocation, javax.swing.GroupLayout.PREFERRED_SIZE, 300, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(lblDate).addComponent(txtDateReported, javax.swing.GroupLayout.PREFERRED_SIZE, 300, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addGroup(panelReportLayout.createSequentialGroup()
-                        .addComponent(btnSubmit, javax.swing.GroupLayout.PREFERRED_SIZE, 90, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(btnClear, javax.swing.GroupLayout.PREFERRED_SIZE, 90, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(btnEditReport, javax.swing.GroupLayout.PREFERRED_SIZE, 90, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(btnDeleteReport, javax.swing.GroupLayout.PREFERRED_SIZE, 90, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(panelReportLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(lblMyReports)
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 620, Short.MAX_VALUE))
-                .addGap(15, 15, 15))
-        );
-        panelReportLayout.setVerticalGroup(
-            panelReportLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(panelReportLayout.createSequentialGroup()
-                .addGap(10, 10, 10)
-                .addGroup(panelReportLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(panelReportLayout.createSequentialGroup()
-                        .addComponent(lblItemName).addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(txtItemName, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(lblDesc).addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(txtDescription, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(lblCategory).addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(cmbCategory, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(lblType).addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(cmbType, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(lblLocation).addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(txtLocation, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(lblDate).addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(txtDateReported, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(15, 15, 15)
-                        .addGroup(panelReportLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(btnSubmit, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(btnClear, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(btnEditReport, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(btnDeleteReport, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                    .addGroup(panelReportLayout.createSequentialGroup()
-                        .addComponent(lblMyReports)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 450, Short.MAX_VALUE)))
-                .addGap(10, 10, 10))
-        );
-
-        tabbedPane.addTab("Report Item", panelReport);
-
-        // ====== TAB 2: BROWSE FOUND ITEMS ======
-        lblBrowseInfo.setFont(new java.awt.Font("Segoe UI", 2, 12));
-        lblBrowseInfo.setForeground(new java.awt.Color(108, 117, 125));
-        lblBrowseInfo.setText("Found items reported by other users. Select one and click REQUEST CLAIM if it's yours.");
-
-        txtSearchFound.setFont(new java.awt.Font("Segoe UI", 0, 13));
-
-        btnSearchFound.setBackground(new java.awt.Color(0, 123, 255));
-        btnSearchFound.setFont(new java.awt.Font("Segoe UI", 1, 11));
-        btnSearchFound.setForeground(new java.awt.Color(255, 255, 255));
-        btnSearchFound.setText("SEARCH");
-        btnSearchFound.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnSearchFoundActionPerformed(evt);
-            }
-        });
-
-        btnRequestClaim.setBackground(new java.awt.Color(40, 167, 69));
-        btnRequestClaim.setFont(new java.awt.Font("Segoe UI", 1, 11));
-        btnRequestClaim.setForeground(new java.awt.Color(255, 255, 255));
-        btnRequestClaim.setText("REQUEST CLAIM");
-        btnRequestClaim.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnRequestClaimActionPerformed(evt);
-            }
-        });
-
-        tblFoundItems.setFont(new java.awt.Font("Segoe UI", 0, 11));
-        tblFoundItems.setModel(new javax.swing.table.DefaultTableModel(
-            new Object [][] {},
-            new String [] { "ID", "Item Name", "Description", "Category", "Location", "Date Found", "Reported By", "Status" }
-        ) {
-            public boolean isCellEditable(int rowIndex, int columnIndex) { return false; }
-        });
-        tblFoundItems.setRowHeight(24);
-        jScrollPane2.setViewportView(tblFoundItems);
-
-        javax.swing.GroupLayout panelBrowseLayout = new javax.swing.GroupLayout(panelBrowse);
-        panelBrowse.setLayout(panelBrowseLayout);
-        panelBrowseLayout.setHorizontalGroup(
-            panelBrowseLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(panelBrowseLayout.createSequentialGroup()
-                .addGap(15, 15, 15)
-                .addGroup(panelBrowseLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(lblBrowseInfo, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addGroup(panelBrowseLayout.createSequentialGroup()
-                        .addComponent(txtSearchFound, javax.swing.GroupLayout.PREFERRED_SIZE, 550, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(btnSearchFound, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(btnRequestClaim, javax.swing.GroupLayout.PREFERRED_SIZE, 160, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addComponent(jScrollPane2))
-                .addGap(15, 15, 15))
-        );
-        panelBrowseLayout.setVerticalGroup(
-            panelBrowseLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(panelBrowseLayout.createSequentialGroup()
-                .addGap(10, 10, 10)
-                .addComponent(lblBrowseInfo)
-                .addGap(10, 10, 10)
-                .addGroup(panelBrowseLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(txtSearchFound, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(btnSearchFound, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(btnRequestClaim, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 420, Short.MAX_VALUE)
-                .addGap(10, 10, 10))
-        );
-
-        tabbedPane.addTab("Browse Found Items", panelBrowse);
-
-        // ====== TAB 3: MY CLAIMS ======
-        lblClaimsInfo.setFont(new java.awt.Font("Segoe UI", 2, 12));
-        lblClaimsInfo.setForeground(new java.awt.Color(108, 117, 125));
-        lblClaimsInfo.setText("Your claim requests and their status (Pending / Approved / Rejected):");
-
-        tblMyClaims.setFont(new java.awt.Font("Segoe UI", 0, 11));
-        tblMyClaims.setModel(new javax.swing.table.DefaultTableModel(
-            new Object [][] {},
-            new String [] { "Claim ID", "Item Name", "Category", "Your Message", "Status", "Date Requested" }
-        ) {
-            public boolean isCellEditable(int rowIndex, int columnIndex) { return false; }
-        });
-        tblMyClaims.setRowHeight(24);
-        jScrollPane3.setViewportView(tblMyClaims);
-
-        javax.swing.GroupLayout panelClaimsLayout = new javax.swing.GroupLayout(panelClaims);
-        panelClaims.setLayout(panelClaimsLayout);
-        panelClaimsLayout.setHorizontalGroup(
-            panelClaimsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(panelClaimsLayout.createSequentialGroup()
-                .addGap(15, 15, 15)
-                .addGroup(panelClaimsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(lblClaimsInfo, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jScrollPane3))
-                .addGap(15, 15, 15))
-        );
-        panelClaimsLayout.setVerticalGroup(
-            panelClaimsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(panelClaimsLayout.createSequentialGroup()
-                .addGap(10, 10, 10)
-                .addComponent(lblClaimsInfo)
-                .addGap(10, 10, 10)
-                .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 440, Short.MAX_VALUE)
-                .addGap(10, 10, 10))
-        );
-
-        tabbedPane.addTab("My Claims", panelClaims);
-
-        tabbedPane.addChangeListener(new javax.swing.event.ChangeListener() {
-            public void stateChanged(javax.swing.event.ChangeEvent evt) {
-                tabbedPaneStateChanged(evt);
-            }
-        });
-
-        // ====== MAIN LAYOUT ======
-        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
-        getContentPane().setLayout(layout);
-        layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addGap(15, 15, 15)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(lblHeader, javax.swing.GroupLayout.PREFERRED_SIZE, 300, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(lblUser, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(btnLogout, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addComponent(tabbedPane))
-                .addGap(15, 15, 15))
-        );
-        layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addGap(10, 10, 10)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(lblHeader, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(btnLogout, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(lblUser, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(tabbedPane, javax.swing.GroupLayout.DEFAULT_SIZE, 530, Short.MAX_VALUE)
-                .addGap(10, 10, 10))
-        );
-
-        setPreferredSize(new java.awt.Dimension(1000, 620));
+        // ── Main layout ──
+        getContentPane().setLayout(new BorderLayout());
+        getContentPane().add(sidebar, BorderLayout.WEST);
+        getContentPane().add(tabbedPane, BorderLayout.CENTER);
         pack();
-        setLocationRelativeTo(null);
-    }// </editor-fold>//GEN-END:initComponents
+    }
+
+    // ==================== TAB 1: REPORT ITEM ====================
+    private JPanel buildReportPanel() {
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        panel.setBackground(BG);
+        panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+
+        // ── Form on left ──
+        JPanel form = new JPanel();
+        form.setBackground(WHITE);
+        form.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(200, 210, 220)),
+            BorderFactory.createEmptyBorder(15, 15, 15, 15)));
+        form.setPreferredSize(new Dimension(330, 0));
+        form.setMinimumSize(new Dimension(280, 0));
+
+        JLabel lblFormTitle = new JLabel("Report a Lost / Found Item");
+        lblFormTitle.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        lblFormTitle.setForeground(PRIMARY);
+
+        txtItemName = makeField();
+        txtDescription = makeField();
+        cmbCategory = new JComboBox<>(new String[]{"Electronics", "Clothing", "Accessories", "Documents", "Others"});
+        cmbCategory.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        cmbType = new JComboBox<>(new String[]{"Lost", "Found"});
+        cmbType.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        cmbLocation = new JComboBox<>(LOCATIONS);
+        cmbLocation.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+
+        int curYear = Calendar.getInstance().get(Calendar.YEAR);
+        String[] years = new String[6];
+        for (int i = 0; i < 6; i++) years[i] = String.valueOf(curYear - i);
+        cmbYear = new JComboBox<>(years);
+        String[] months = {"01","02","03","04","05","06","07","08","09","10","11","12"};
+        cmbMonth = new JComboBox<>(months);
+        cmbMonth.setSelectedIndex(Calendar.getInstance().get(Calendar.MONTH));
+        String[] days = new String[31];
+        for (int i = 0; i < 31; i++) days[i] = String.format("%02d", i + 1);
+        cmbDay = new JComboBox<>(days);
+        cmbDay.setSelectedIndex(Calendar.getInstance().get(Calendar.DAY_OF_MONTH) - 1);
+        cmbYear.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        cmbMonth.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        cmbDay.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+
+        JPanel datePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        datePanel.setBackground(WHITE);
+        datePanel.add(cmbYear); datePanel.add(new JLabel("-")); datePanel.add(cmbMonth); datePanel.add(new JLabel("-")); datePanel.add(cmbDay);
+
+        btnSubmit = new JButton("SUBMIT REPORT");
+        btnSubmit.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        UIHelper.styleButton(btnSubmit, GREEN, WHITE);
+
+        JButton btnClear = new JButton("CLEAR");
+        btnClear.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        UIHelper.styleButton(btnClear, GRAY, WHITE);
+
+        GroupLayout fl = new GroupLayout(form);
+        form.setLayout(fl);
+        JLabel l1 = makeLabel("Item Name: *"), l2 = makeLabel("Description:"), l3 = makeLabel("Category:"),
+               l4 = makeLabel("Type: *"), l5 = makeLabel("Location: *"), l6 = makeLabel("Date: *");
+
+        fl.setHorizontalGroup(fl.createParallelGroup(GroupLayout.Alignment.LEADING)
+            .addComponent(lblFormTitle)
+            .addComponent(l1).addComponent(txtItemName, GroupLayout.DEFAULT_SIZE, 295, Short.MAX_VALUE)
+            .addComponent(l2).addComponent(txtDescription)
+            .addComponent(l3).addComponent(cmbCategory, 0, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(l4).addComponent(cmbType, 0, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(l5).addComponent(cmbLocation, 0, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(l6).addComponent(datePanel, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addGroup(fl.createSequentialGroup()
+                .addComponent(btnSubmit, GroupLayout.PREFERRED_SIZE, 145, GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(btnClear, GroupLayout.PREFERRED_SIZE, 100, GroupLayout.PREFERRED_SIZE))
+        );
+        fl.setVerticalGroup(fl.createSequentialGroup()
+            .addComponent(lblFormTitle).addGap(12)
+            .addComponent(l1).addGap(3).addComponent(txtItemName, GroupLayout.PREFERRED_SIZE, 30, GroupLayout.PREFERRED_SIZE).addGap(6)
+            .addComponent(l2).addGap(3).addComponent(txtDescription, GroupLayout.PREFERRED_SIZE, 30, GroupLayout.PREFERRED_SIZE).addGap(6)
+            .addComponent(l3).addGap(3).addComponent(cmbCategory, GroupLayout.PREFERRED_SIZE, 30, GroupLayout.PREFERRED_SIZE).addGap(6)
+            .addComponent(l4).addGap(3).addComponent(cmbType, GroupLayout.PREFERRED_SIZE, 30, GroupLayout.PREFERRED_SIZE).addGap(6)
+            .addComponent(l5).addGap(3).addComponent(cmbLocation, GroupLayout.PREFERRED_SIZE, 30, GroupLayout.PREFERRED_SIZE).addGap(6)
+            .addComponent(l6).addGap(3).addComponent(datePanel, GroupLayout.PREFERRED_SIZE, 30, GroupLayout.PREFERRED_SIZE).addGap(15)
+            .addGroup(fl.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                .addComponent(btnSubmit, GroupLayout.PREFERRED_SIZE, 34, GroupLayout.PREFERRED_SIZE)
+                .addComponent(btnClear, GroupLayout.PREFERRED_SIZE, 34, GroupLayout.PREFERRED_SIZE))
+        );
+
+        // ── Table on right ──
+        JPanel tablePanel = new JPanel(new BorderLayout(0, 5));
+        tablePanel.setBackground(BG);
+        JLabel lblMy = new JLabel("My Reports:");
+        lblMy.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        lblMy.setForeground(PRIMARY);
+
+        tblMyReports = new JTable(new DefaultTableModel(
+            new Object[][]{},
+            new String[]{"ID", "Item Name", "Description", "Category", "Type", "Location", "Date", "Status"}
+        ) { public boolean isCellEditable(int r, int c) { return false; } });
+        tblMyReports.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        tblMyReports.setRowHeight(24);
+        tblMyReports.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 11));
+        tblMyReports.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+
+        tablePanel.add(lblMy, BorderLayout.NORTH);
+        tablePanel.add(new JScrollPane(tblMyReports), BorderLayout.CENTER);
+
+        panel.add(form, BorderLayout.WEST);
+        panel.add(tablePanel, BorderLayout.CENTER);
+
+        btnSubmit.addActionListener(e -> doSubmit());
+        btnClear.addActionListener(e -> clearFields());
+
+        return panel;
+    }
+
+    // ==================== TAB 2: BROWSE FOUND ITEMS ====================
+    private JPanel buildBrowsePanel() {
+        JPanel panel = new JPanel(new BorderLayout(0, 10));
+        panel.setBackground(BG);
+        panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+
+        JLabel lblInfo = new JLabel("Found items reported by other users. Select one and click REQUEST CLAIM if it's yours.");
+        lblInfo.setFont(new Font("Segoe UI", Font.ITALIC, 12));
+        lblInfo.setForeground(GRAY);
+
+        JPanel topBar = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        topBar.setBackground(BG);
+        txtSearchFound = new JTextField(25);
+        txtSearchFound.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        JButton btnSearch = makeBtn("SEARCH", BLUE);
+        JButton btnClaim = makeBtn("REQUEST CLAIM", GREEN);
+        topBar.add(txtSearchFound); topBar.add(btnSearch); topBar.add(btnClaim);
+
+        tblFoundItems = new JTable(new DefaultTableModel(
+            new Object[][]{},
+            new String[]{"ID", "Item Name", "Description", "Category", "Location", "Date Found", "Reported By", "Status"}
+        ) { public boolean isCellEditable(int r, int c) { return false; } });
+        tblFoundItems.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        tblFoundItems.setRowHeight(24);
+        tblFoundItems.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 11));
+        tblFoundItems.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+
+        JPanel top = new JPanel(new BorderLayout(0, 5));
+        top.setBackground(BG);
+        top.add(lblInfo, BorderLayout.NORTH);
+        top.add(topBar, BorderLayout.SOUTH);
+
+        panel.add(top, BorderLayout.NORTH);
+        panel.add(new JScrollPane(tblFoundItems), BorderLayout.CENTER);
+
+        btnSearch.addActionListener(e -> loadFoundItems());
+        btnClaim.addActionListener(e -> doRequestClaim());
+
+        return panel;
+    }
+
+    // ==================== TAB 3: MY CLAIMS ====================
+    private JPanel buildClaimsPanel() {
+        JPanel panel = new JPanel(new BorderLayout(0, 10));
+        panel.setBackground(BG);
+        panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+
+        JLabel lblInfo = new JLabel("Your claim requests and their status (Pending / Approved / Rejected):");
+        lblInfo.setFont(new Font("Segoe UI", Font.ITALIC, 12));
+        lblInfo.setForeground(GRAY);
+
+        tblMyClaims = new JTable(new DefaultTableModel(
+            new Object[][]{},
+            new String[]{"Claim ID", "Item Name", "Category", "Your Message", "Status", "Date Requested"}
+        ) { public boolean isCellEditable(int r, int c) { return false; } });
+        tblMyClaims.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        tblMyClaims.setRowHeight(24);
+        tblMyClaims.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 11));
+        tblMyClaims.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+
+        panel.add(lblInfo, BorderLayout.NORTH);
+        panel.add(new JScrollPane(tblMyClaims), BorderLayout.CENTER);
+        return panel;
+    }
 
     // ==================== DATA LOADING ====================
     private void loadMyReports() {
@@ -426,10 +356,7 @@ public class UserDashboard extends javax.swing.JFrame {
             }
             sql += " ORDER BY i.id DESC";
             PreparedStatement ps = conn.prepareStatement(sql);
-            if (!kw.isEmpty()) {
-                String s = "%" + kw + "%";
-                for (int i = 1; i <= 4; i++) ps.setString(i, s);
-            }
+            if (!kw.isEmpty()) { String s = "%" + kw + "%"; for (int i = 1; i <= 4; i++) ps.setString(i, s); }
             ResultSet rs = ps.executeQuery();
             DefaultTableModel m = (DefaultTableModel) tblFoundItems.getModel(); m.setRowCount(0);
             while (rs.next()) {
@@ -459,102 +386,34 @@ public class UserDashboard extends javax.swing.JFrame {
     }
 
     // ==================== ACTIONS ====================
-    private void btnSubmitActionPerformed(java.awt.event.ActionEvent evt) {
+    private void doSubmit() {
         String name = txtItemName.getText().trim();
-        String loc = txtLocation.getText().trim();
-        String date = txtDateReported.getText().trim();
-        if (name.isEmpty() || loc.isEmpty() || date.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Fill in all required fields (*)!"); return;
-        }
+        if (name.isEmpty()) { JOptionPane.showMessageDialog(this, "Fill in all required fields (*)!"); return; }
+        String date = cmbYear.getSelectedItem() + "-" + cmbMonth.getSelectedItem() + "-" + cmbDay.getSelectedItem();
+        String loc = (String) cmbLocation.getSelectedItem();
+
         try {
             Connection conn = DBConnection.getConnection(); if (conn == null) return;
-            if (editMode) {
-                // UPDATE — only own posts
-                PreparedStatement ps = conn.prepareStatement(
-                    "UPDATE items SET item_name=?, description=?, category=?, type=?, location=?, date_reported=? WHERE id=? AND reported_by=?");
-                ps.setString(1, name); ps.setString(2, txtDescription.getText().trim());
-                ps.setString(3, cmbCategory.getSelectedItem().toString());
-                ps.setString(4, cmbType.getSelectedItem().toString());
-                ps.setString(5, loc); ps.setString(6, date);
-                ps.setInt(7, editId); ps.setInt(8, userId);
-                int rows = ps.executeUpdate();
-                if (rows > 0) JOptionPane.showMessageDialog(this, "Report updated successfully!");
-                else JOptionPane.showMessageDialog(this, "Update failed. You can only edit your own Open reports.", "Error", JOptionPane.ERROR_MESSAGE);
-            } else {
-                // INSERT — new report
-                PreparedStatement ps = conn.prepareStatement(
-                    "INSERT INTO items (item_name, description, category, type, location, date_reported, reported_by) VALUES (?,?,?,?,?,?,?)");
-                ps.setString(1, name); ps.setString(2, txtDescription.getText().trim());
-                ps.setString(3, cmbCategory.getSelectedItem().toString());
-                ps.setString(4, cmbType.getSelectedItem().toString());
-                ps.setString(5, loc); ps.setString(6, date); ps.setInt(7, userId);
-                ps.executeUpdate();
-                JOptionPane.showMessageDialog(this, "Item reported successfully!");
-            }
+            PreparedStatement ps = conn.prepareStatement(
+                "INSERT INTO items (item_name, description, category, type, location, date_reported, reported_by) VALUES (?,?,?,?,?,?,?)");
+            ps.setString(1, name); ps.setString(2, txtDescription.getText().trim());
+            ps.setString(3, cmbCategory.getSelectedItem().toString());
+            ps.setString(4, cmbType.getSelectedItem().toString());
+            ps.setString(5, loc); ps.setString(6, date); ps.setInt(7, userId);
+            ps.executeUpdate();
+            JOptionPane.showMessageDialog(this, "Item reported successfully!");
             clearFields(); loadMyReports(); conn.close();
         } catch (SQLException e) { JOptionPane.showMessageDialog(this, "Error:\n" + e.getMessage()); }
     }
 
-    private void btnClearActionPerformed(java.awt.event.ActionEvent evt) {
-        clearFields();
-    }
-
-    private void btnEditReportActionPerformed(java.awt.event.ActionEvent evt) {
-        int row = tblMyReports.getSelectedRow();
-        if (row == -1) { JOptionPane.showMessageDialog(this, "Select one of your reports first!"); return; }
-        String status = tblMyReports.getValueAt(row, 7).toString();
-        if (!"Open".equals(status)) {
-            JOptionPane.showMessageDialog(this, "You can only edit reports with 'Open' status.", "Not Allowed", JOptionPane.WARNING_MESSAGE); return;
-        }
-        // Populate form fields from selected row
-        editId = Integer.parseInt(tblMyReports.getValueAt(row, 0).toString());
-        txtItemName.setText(tblMyReports.getValueAt(row, 1).toString());
-        txtDescription.setText(tblMyReports.getValueAt(row, 2).toString());
-        String cat = tblMyReports.getValueAt(row, 3).toString();
-        for (int i = 0; i < cmbCategory.getItemCount(); i++) {
-            if (cmbCategory.getItemAt(i).equals(cat)) { cmbCategory.setSelectedIndex(i); break; }
-        }
-        String type = tblMyReports.getValueAt(row, 4).toString();
-        for (int i = 0; i < cmbType.getItemCount(); i++) {
-            if (cmbType.getItemAt(i).equals(type)) { cmbType.setSelectedIndex(i); break; }
-        }
-        txtLocation.setText(tblMyReports.getValueAt(row, 5).toString());
-        txtDateReported.setText(tblMyReports.getValueAt(row, 6).toString());
-        editMode = true;
-        btnSubmit.setText("UPDATE");
-        btnSubmit.setBackground(new java.awt.Color(255, 193, 7));
-        btnSubmit.setForeground(new java.awt.Color(0, 0, 0));
-        JOptionPane.showMessageDialog(this, "Editing report ID " + editId + ". Make your changes and click UPDATE.", "Edit Mode", JOptionPane.INFORMATION_MESSAGE);
-    }
-
-    private void btnDeleteReportActionPerformed(java.awt.event.ActionEvent evt) {
-        int row = tblMyReports.getSelectedRow();
-        if (row == -1) { JOptionPane.showMessageDialog(this, "Select one of your reports first!"); return; }
-        int id = Integer.parseInt(tblMyReports.getValueAt(row, 0).toString());
-        String status = tblMyReports.getValueAt(row, 7).toString();
-        if (!"Open".equals(status)) {
-            JOptionPane.showMessageDialog(this, "You can only delete reports with 'Open' status.", "Not Allowed", JOptionPane.WARNING_MESSAGE); return;
-        }
-        if (JOptionPane.showConfirmDialog(this, "Delete this report?", "Confirm", JOptionPane.YES_NO_OPTION) != 0) return;
-        try {
-            Connection conn = DBConnection.getConnection(); if (conn == null) return;
-            PreparedStatement ps = conn.prepareStatement("DELETE FROM items WHERE id=? AND reported_by=?");
-            ps.setInt(1, id); ps.setInt(2, userId); ps.executeUpdate();
-            JOptionPane.showMessageDialog(this, "Report deleted!"); loadMyReports(); conn.close();
-        } catch (SQLException e) { JOptionPane.showMessageDialog(this, "Error:\n" + e.getMessage()); }
-    }
-
-    private void btnSearchFoundActionPerformed(java.awt.event.ActionEvent evt) {
-        loadFoundItems();
-    }
-
-    private void btnRequestClaimActionPerformed(java.awt.event.ActionEvent evt) {
+    private void doRequestClaim() {
         int row = tblFoundItems.getSelectedRow();
         if (row == -1) { JOptionPane.showMessageDialog(this, "Select a found item first!"); return; }
         int itemId = Integer.parseInt(tblFoundItems.getValueAt(row, 0).toString());
         String itemName = tblFoundItems.getValueAt(row, 1).toString();
         try {
             Connection conn = DBConnection.getConnection(); if (conn == null) return;
+
             PreparedStatement chk = conn.prepareStatement(
                 "SELECT id FROM claim_requests WHERE item_id=? AND requested_by=? AND status='Pending'");
             chk.setInt(1, itemId); chk.setInt(2, userId);
@@ -562,80 +421,69 @@ public class UserDashboard extends javax.swing.JFrame {
                 JOptionPane.showMessageDialog(this, "You already have a pending claim for this item!", "Info", JOptionPane.WARNING_MESSAGE);
                 conn.close(); return;
             }
+
+            PreparedStatement vq = conn.prepareStatement("SELECT verification_question FROM items WHERE id=?");
+            vq.setInt(1, itemId);
+            ResultSet vrs = vq.executeQuery();
+            String verificationQ = null;
+            if (vrs.next()) verificationQ = vrs.getString("verification_question");
+
+            String verificationA = null;
+            if (verificationQ != null && !verificationQ.isEmpty()) {
+                verificationA = JOptionPane.showInputDialog(this,
+                    "Verification Question:\n" + verificationQ + "\n\nYour Answer:",
+                    "Claim Verification - " + itemName, JOptionPane.QUESTION_MESSAGE);
+                if (verificationA == null) { conn.close(); return; }
+            }
+
             String msg = JOptionPane.showInputDialog(this,
                 "Claim \"" + itemName + "\"?\nProvide a short description to prove ownership:",
                 "Request Claim", JOptionPane.QUESTION_MESSAGE);
             if (msg == null) { conn.close(); return; }
+
             PreparedStatement ps = conn.prepareStatement(
-                "INSERT INTO claim_requests (item_id, requested_by, message) VALUES (?,?,?)");
-            ps.setInt(1, itemId); ps.setInt(2, userId); ps.setString(3, msg);
+                "INSERT INTO claim_requests (item_id, requested_by, message, verification_answer) VALUES (?,?,?,?)");
+            ps.setInt(1, itemId); ps.setInt(2, userId); ps.setString(3, msg); ps.setString(4, verificationA);
             ps.executeUpdate();
+
             PreparedStatement up = conn.prepareStatement("UPDATE items SET status='Claim Pending' WHERE id=?");
             up.setInt(1, itemId); up.executeUpdate();
+
             JOptionPane.showMessageDialog(this, "Claim request submitted! Admin will review it.");
             loadFoundItems(); loadMyClaims(); conn.close();
         } catch (SQLException e) { JOptionPane.showMessageDialog(this, "Error:\n" + e.getMessage()); }
     }
 
-    private void btnLogoutActionPerformed(java.awt.event.ActionEvent evt) {
-        if (JOptionPane.showConfirmDialog(this, "Logout?", "Confirm", JOptionPane.YES_NO_OPTION) == 0) {
-            dispose(); new LoginForm().setVisible(true);
-        }
-    }
-
-    private void tabbedPaneStateChanged(javax.swing.event.ChangeEvent evt) {
-        int idx = tabbedPane.getSelectedIndex();
-        if (idx == 0) loadMyReports();
-        else if (idx == 1) loadFoundItems();
-        else if (idx == 2) loadMyClaims();
-    }
-
     private void clearFields() {
-        txtItemName.setText(""); txtDescription.setText(""); cmbCategory.setSelectedIndex(0);
-        cmbType.setSelectedIndex(0); txtLocation.setText(""); txtDateReported.setText("");
-        editMode = false; editId = -1;
-        btnSubmit.setText("SUBMIT");
-        btnSubmit.setBackground(new java.awt.Color(40, 167, 69));
-        btnSubmit.setForeground(new java.awt.Color(255, 255, 255));
-        btnEditReport.setEnabled(false);
-        tblMyReports.clearSelection();
+        txtItemName.setText(""); txtDescription.setText("");
+        cmbCategory.setSelectedIndex(0); cmbType.setSelectedIndex(0); cmbLocation.setSelectedIndex(0);
+        int m = Calendar.getInstance().get(Calendar.MONTH);
+        int d = Calendar.getInstance().get(Calendar.DAY_OF_MONTH) - 1;
+        cmbYear.setSelectedIndex(0);
+        cmbMonth.setSelectedIndex(m);
+        if (d >= 0 && d < cmbDay.getItemCount()) cmbDay.setSelectedIndex(d);
     }
 
-    // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton btnClear;
-    private javax.swing.JButton btnDeleteReport;
-    private javax.swing.JButton btnEditReport;
-    private javax.swing.JButton btnLogout;
-    private javax.swing.JButton btnRequestClaim;
-    private javax.swing.JButton btnSearchFound;
-    private javax.swing.JButton btnSubmit;
-    private javax.swing.JComboBox<String> cmbCategory;
-    private javax.swing.JComboBox<String> cmbType;
-    private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JScrollPane jScrollPane2;
-    private javax.swing.JScrollPane jScrollPane3;
-    private javax.swing.JLabel lblBrowseInfo;
-    private javax.swing.JLabel lblCategory;
-    private javax.swing.JLabel lblClaimsInfo;
-    private javax.swing.JLabel lblDate;
-    private javax.swing.JLabel lblDesc;
-    private javax.swing.JLabel lblHeader;
-    private javax.swing.JLabel lblItemName;
-    private javax.swing.JLabel lblLocation;
-    private javax.swing.JLabel lblMyReports;
-    private javax.swing.JLabel lblType;
-    private javax.swing.JLabel lblUser;
-    private javax.swing.JPanel panelBrowse;
-    private javax.swing.JPanel panelClaims;
-    private javax.swing.JPanel panelReport;
-    private javax.swing.JTabbedPane tabbedPane;
-    private javax.swing.JTable tblFoundItems;
-    private javax.swing.JTable tblMyClaims;
-    private javax.swing.JTable tblMyReports;
-    private javax.swing.JTextField txtDateReported;
-    private javax.swing.JTextField txtDescription;
-    private javax.swing.JTextField txtItemName;
-    private javax.swing.JTextField txtLocation;
-    private javax.swing.JTextField txtSearchFound;
-    // End of variables declaration//GEN-END:variables
+    // ── Helper methods ──
+    private JButton makeSidebarBtn(String text) {
+        JButton btn = new JButton(text);
+        UIHelper.styleSidebarButton(btn, SIDEBAR_BG, SIDEBAR_SEL);
+        return btn;
+    }
+    private JButton makeBtn(String text, Color bg) {
+        JButton b = new JButton(text);
+        b.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        UIHelper.styleButton(b, bg, WHITE);
+        return b;
+    }
+    private JLabel makeLabel(String text) {
+        JLabel l = new JLabel(text); l.setFont(new Font("Segoe UI", Font.BOLD, 12)); l.setForeground(TEXT_DARK); return l;
+    }
+    private JTextField makeField() {
+        JTextField f = new JTextField(); f.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        f.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(200, 210, 220)),
+            BorderFactory.createEmptyBorder(4, 8, 4, 8)));
+        return f;
+    }
 }
