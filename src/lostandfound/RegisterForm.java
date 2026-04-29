@@ -54,9 +54,9 @@ public class RegisterForm extends javax.swing.JFrame {
         txtLastName = makeField();
         JLabel lblGN = makeLabel("Given Name: *");
         txtGivenName = makeField();
-        JLabel lblMN = makeLabel("Middle Name / Initial:");
+        JLabel lblMN = makeLabel("Middle Name:");
         txtMiddleName = makeField();
-        JLabel lblNameHint = new JLabel("Will be stored as: Last Name, Given Name, Middle Name");
+        JLabel lblNameHint = new JLabel("Please enter full middle name (not initials). Stored as: Last Name, Given Name, Middle Name");
         lblNameHint.setFont(new Font("Segoe UI", Font.ITALIC, 10));
         lblNameHint.setForeground(TEXT_MUTED);
 

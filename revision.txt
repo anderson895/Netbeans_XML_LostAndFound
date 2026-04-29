@@ -1,0 +1,21 @@
+Need daw po i-hide yung button sa taas useless na daw lo kase meron na daw po sa gilid....
+
+user dash board dagdagan daw po ng edit profile 
+
+request claim - picture not text daw po...
+
+browser found item - visible to all users kahit found na daw po dapat
+visible parin
+
+browser lost item - visible to all users din daw po para alam daw po nila yung ike-claim nila na gamit nila
+
+location - text field na lang daw po
+
+middle name na lang daw po wag na ilagay yung initials
+
+okay na po yung sa date, pero lagyan daw po ng time.
+
+
+Sa category and type daw po dapat may filter kumabag kuya pag found po lahat po ng found yun lang ang makikita
+
+tapos pag daw po na reject na yung claim requests di na daw po dapat maulit yung request ng user sa item na yun...

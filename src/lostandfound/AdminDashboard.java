@@ -1,10 +1,12 @@
 package lostandfound;
 
 import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.io.*;
 import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 
@@ -29,18 +31,22 @@ public class AdminDashboard extends javax.swing.JFrame {
     private static final Color TEAL        = new Color(23, 162, 184);
     private static final Color TEXT_DARK   = new Color(33, 37, 41);
 
+    // ── Card names ──
+    private static final String CARD_ANALYTICS = "ANALYTICS";
+    private static final String CARD_ITEMS     = "ITEMS";
+    private static final String CARD_CLAIMS    = "CLAIMS";
+    private static final String CARD_USERS     = "USERS";
+    private static final String CARD_RECYCLE   = "RECYCLE";
+    private static final String CARD_BACKUP    = "BACKUP";
+
     // ── Components ──
-    private JTabbedPane tabbedPane;
+    private JPanel cardsPanel;
+    private CardLayout cardLayout;
     private JTextField txtSearch;
+    private JComboBox<String> cmbFilterType, cmbFilterCategory;
     private JTable tblItems, tblClaims, tblUsers, tblRecycleBin;
 
-    // ── ASCOT Locations ──
-    private static final String[] LOCATIONS = {
-        "ASCOT ENTRANCE", "ASCOT EXIT", "ASCOT HOSTEL",
-        "Information and Communication Technology Center (ICTC)",
-        "Engineering Building", "General Education Buildings",
-        "Senator Edgardo Angara Hall"
-    };
+    private static final String[] CATEGORIES = {"Electronics", "Clothing", "Accessories", "Documents", "Others"};
 
     public AdminDashboard(int adminId, String adminName) {
         this.adminId = adminId;
@@ -57,7 +63,7 @@ public class AdminDashboard extends javax.swing.JFrame {
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Admin Dashboard - " + adminName);
         setMinimumSize(new Dimension(950, 600));
-        setPreferredSize(new Dimension(1150, 700));
+        setPreferredSize(new Dimension(1200, 720));
 
         // ====== SIDEBAR ======
         JPanel sidebar = new JPanel();
@@ -67,7 +73,6 @@ public class AdminDashboard extends javax.swing.JFrame {
         sidebar.setMaximumSize(new Dimension(230, Integer.MAX_VALUE));
         sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
 
-        // ── Logo / header area ──
         JPanel logoPanel = new JPanel();
         logoPanel.setBackground(SIDEBAR_BG);
         logoPanel.setLayout(new BoxLayout(logoPanel, BoxLayout.Y_AXIS));
@@ -101,7 +106,6 @@ public class AdminDashboard extends javax.swing.JFrame {
         sep1.setForeground(new Color(60, 75, 95));
         sep1.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        // ── Nav buttons ──
         JButton btnSAnalytics = makeSidebarBtn("Analytics");
         JButton btnSItems     = makeSidebarBtn("All Items");
         JButton btnSClaims    = makeSidebarBtn("Claim Requests");
@@ -125,33 +129,23 @@ public class AdminDashboard extends javax.swing.JFrame {
         sidebar.add(btnLogout);
         sidebar.add(Box.createVerticalStrut(12));
 
-        // ====== TABBED CONTENT ======
-        tabbedPane = new JTabbedPane();
-        tabbedPane.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        tabbedPane.setBackground(BG);
-        tabbedPane.addTab("Analytics", buildAnalyticsPanel());
-        tabbedPane.addTab("All Items", buildItemsPanel());
-        tabbedPane.addTab("Claim Requests", buildClaimsPanel());
-        tabbedPane.addTab("Manage Users", buildUsersPanel());
-        tabbedPane.addTab("Recycle Bin", buildRecycleBinPanel());
-        tabbedPane.addTab("Backup & Restore", buildBackupPanel());
+        // ====== CARDS (no JTabbedPane → no top tabs) ======
+        cardLayout = new CardLayout();
+        cardsPanel = new JPanel(cardLayout);
+        cardsPanel.setBackground(BG);
+        cardsPanel.add(buildAnalyticsPanel(),  CARD_ANALYTICS);
+        cardsPanel.add(buildItemsPanel(),      CARD_ITEMS);
+        cardsPanel.add(buildClaimsPanel(),     CARD_CLAIMS);
+        cardsPanel.add(buildUsersPanel(),      CARD_USERS);
+        cardsPanel.add(buildRecycleBinPanel(), CARD_RECYCLE);
+        cardsPanel.add(buildBackupPanel(),     CARD_BACKUP);
 
-        tabbedPane.addChangeListener(e -> {
-            int i = tabbedPane.getSelectedIndex();
-            if (i == 0) refreshAnalytics();
-            else if (i == 1) loadItems();
-            else if (i == 2) loadClaims();
-            else if (i == 3) loadUsers();
-            else if (i == 4) loadRecycleBin();
-        });
-
-        // Sidebar nav
-        btnSAnalytics.addActionListener(e -> tabbedPane.setSelectedIndex(0));
-        btnSItems.addActionListener(e -> tabbedPane.setSelectedIndex(1));
-        btnSClaims.addActionListener(e -> tabbedPane.setSelectedIndex(2));
-        btnSUsers.addActionListener(e -> tabbedPane.setSelectedIndex(3));
-        btnSRecycle.addActionListener(e -> tabbedPane.setSelectedIndex(4));
-        btnSBackup.addActionListener(e -> tabbedPane.setSelectedIndex(5));
+        btnSAnalytics.addActionListener(e -> { cardLayout.show(cardsPanel, CARD_ANALYTICS); refreshAnalytics(); });
+        btnSItems.addActionListener(e -> { cardLayout.show(cardsPanel, CARD_ITEMS); loadItems(); });
+        btnSClaims.addActionListener(e -> { cardLayout.show(cardsPanel, CARD_CLAIMS); loadClaims(); });
+        btnSUsers.addActionListener(e -> { cardLayout.show(cardsPanel, CARD_USERS); loadUsers(); });
+        btnSRecycle.addActionListener(e -> { cardLayout.show(cardsPanel, CARD_RECYCLE); loadRecycleBin(); });
+        btnSBackup.addActionListener(e -> cardLayout.show(cardsPanel, CARD_BACKUP));
         btnLogout.addActionListener(e -> {
             if (JOptionPane.showConfirmDialog(this, "Logout?", "Confirm", JOptionPane.YES_NO_OPTION) == 0) {
                 dispose(); new LoginForm().setVisible(true);
@@ -160,11 +154,11 @@ public class AdminDashboard extends javax.swing.JFrame {
 
         getContentPane().setLayout(new BorderLayout());
         getContentPane().add(sidebar, BorderLayout.WEST);
-        getContentPane().add(tabbedPane, BorderLayout.CENTER);
+        getContentPane().add(cardsPanel, BorderLayout.CENTER);
         pack();
     }
 
-    // ========================= TAB 0: ANALYTICS =========================
+    // ========================= ANALYTICS =========================
     private JPanel analyticsPanel;
     private JLabel lblLostCount, lblFoundCount, lblClaimedCount, lblTotalCount;
 
@@ -177,18 +171,18 @@ public class AdminDashboard extends javax.swing.JFrame {
         lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 18));
         lblTitle.setForeground(PRIMARY);
 
-        JPanel cardsPanel = new JPanel(new GridLayout(1, 4, 15, 0));
-        cardsPanel.setBackground(BG);
+        JPanel cards = new JPanel(new GridLayout(1, 4, 15, 0));
+        cards.setBackground(BG);
 
         lblLostCount    = new JLabel("0", SwingConstants.CENTER);
         lblFoundCount   = new JLabel("0", SwingConstants.CENTER);
         lblClaimedCount = new JLabel("0", SwingConstants.CENTER);
         lblTotalCount   = new JLabel("0", SwingConstants.CENTER);
 
-        cardsPanel.add(makeStatCard("Lost Items",    lblLostCount,    RED));
-        cardsPanel.add(makeStatCard("Found Items",   lblFoundCount,   BLUE));
-        cardsPanel.add(makeStatCard("Claimed Items", lblClaimedCount, GREEN));
-        cardsPanel.add(makeStatCard("Total Items",   lblTotalCount,   PURPLE));
+        cards.add(makeStatCard("Lost Items",    lblLostCount,    RED));
+        cards.add(makeStatCard("Found Items",   lblFoundCount,   BLUE));
+        cards.add(makeStatCard("Claimed Items", lblClaimedCount, GREEN));
+        cards.add(makeStatCard("Total Items",   lblTotalCount,   PURPLE));
 
         JPanel chartPanel = new JPanel() {
             @Override
@@ -206,7 +200,7 @@ public class AdminDashboard extends javax.swing.JFrame {
         JPanel topPanel = new JPanel(new BorderLayout(0, 15));
         topPanel.setBackground(BG);
         topPanel.add(lblTitle, BorderLayout.NORTH);
-        topPanel.add(cardsPanel, BorderLayout.CENTER);
+        topPanel.add(cards, BorderLayout.CENTER);
 
         analyticsPanel.add(topPanel, BorderLayout.NORTH);
         analyticsPanel.add(chartPanel, BorderLayout.CENTER);
@@ -298,21 +292,25 @@ public class AdminDashboard extends javax.swing.JFrame {
         return card;
     }
 
-    // ========================= TAB 1: ALL ITEMS =========================
+    // ========================= ITEMS =========================
     private JPanel buildItemsPanel() {
         JPanel panel = new JPanel(new BorderLayout(0, 8));
         panel.setBackground(BG);
         panel.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
 
-        JLabel info = new JLabel("Manage all lost and found items. Admin can edit, delete, resolve, and find matches.");
+        JLabel info = new JLabel("Manage all lost and found items. Filter by type/category, edit, delete, resolve, or find matches.");
         info.setFont(new Font("Segoe UI", Font.ITALIC, 11));
         info.setForeground(GRAY);
 
-        // ── Toolbar with wrapping ──
         JPanel bar = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 4));
         bar.setBackground(BG);
-        txtSearch = new JTextField(16);
+        txtSearch = new JTextField(14);
         txtSearch.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+
+        cmbFilterType = new JComboBox<>(new String[]{"All Types", "Lost", "Found"});
+        cmbFilterType.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        cmbFilterCategory = new JComboBox<>(buildFilterCategories());
+        cmbFilterCategory.setFont(new Font("Segoe UI", Font.PLAIN, 12));
 
         JButton bSearch   = makeBtn("SEARCH", BLUE);
         JButton bEdit     = makeBtn("EDIT", YELLOW); bEdit.setForeground(Color.BLACK);
@@ -322,12 +320,15 @@ public class AdminDashboard extends javax.swing.JFrame {
         JButton bAddVerif = makeBtn("VERIFY", new Color(102, 51, 153));
         JButton bRefresh  = makeBtn("REFRESH", GRAY);
 
-        bar.add(txtSearch); bar.add(bSearch); bar.add(bEdit); bar.add(bDelete);
+        bar.add(new JLabel("Search:")); bar.add(txtSearch);
+        bar.add(new JLabel("Type:")); bar.add(cmbFilterType);
+        bar.add(new JLabel("Category:")); bar.add(cmbFilterCategory);
+        bar.add(bSearch); bar.add(bEdit); bar.add(bDelete);
         bar.add(bResolve); bar.add(bMatch); bar.add(bAddVerif); bar.add(bRefresh);
 
         tblItems = new JTable(new DefaultTableModel(
             new Object[][]{},
-            new String[]{"ID", "Item Name", "Description", "Category", "Type", "Location", "Date", "Reported By", "Status", "Verification Q"}
+            new String[]{"ID", "Item Name", "Description", "Category", "Type", "Location", "Date & Time", "Reported By", "Status", "Verification Q"}
         ) { public boolean isCellEditable(int r, int c) { return false; } });
         tblItems.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         tblItems.setRowHeight(24);
@@ -343,7 +344,12 @@ public class AdminDashboard extends javax.swing.JFrame {
         panel.add(new JScrollPane(tblItems), BorderLayout.CENTER);
 
         bSearch.addActionListener(e -> loadItems());
-        bRefresh.addActionListener(e -> { txtSearch.setText(""); loadItems(); });
+        bRefresh.addActionListener(e -> {
+            txtSearch.setText("");
+            cmbFilterType.setSelectedIndex(0);
+            cmbFilterCategory.setSelectedIndex(0);
+            loadItems();
+        });
         bDelete.addActionListener(e -> doDeleteItem());
         bResolve.addActionListener(e -> doMarkResolved());
         bMatch.addActionListener(e -> doFindMatch());
@@ -353,26 +359,27 @@ public class AdminDashboard extends javax.swing.JFrame {
         return panel;
     }
 
-    // ========================= TAB 2: CLAIMS =========================
+    // ========================= CLAIMS =========================
     private JPanel buildClaimsPanel() {
         JPanel panel = new JPanel(new BorderLayout(0, 8));
         panel.setBackground(BG);
         panel.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
 
-        JLabel info = new JLabel("Review and approve/reject user claim requests. Verification answers shown if available.");
+        JLabel info = new JLabel("Review and approve/reject user claim requests. View image proof attached by claimant.");
         info.setFont(new Font("Segoe UI", Font.ITALIC, 11));
         info.setForeground(GRAY);
 
         JPanel bar = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 4));
         bar.setBackground(BG);
+        JButton bView    = makeBtn("VIEW IMAGE", BLUE);
         JButton bApprove = makeBtn("APPROVE", GREEN);
         JButton bReject  = makeBtn("REJECT", RED);
         JButton bRefresh = makeBtn("REFRESH", GRAY);
-        bar.add(bApprove); bar.add(bReject); bar.add(bRefresh);
+        bar.add(bView); bar.add(bApprove); bar.add(bReject); bar.add(bRefresh);
 
         tblClaims = new JTable(new DefaultTableModel(
             new Object[][]{},
-            new String[]{"Claim ID", "Item Name", "Category", "Claimant", "Message", "Verif. Answer", "Status", "Date"}
+            new String[]{"Claim ID", "Item Name", "Category", "Claimant", "Verif. Answer", "Status", "Date"}
         ) { public boolean isCellEditable(int r, int c) { return false; } });
         tblClaims.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         tblClaims.setRowHeight(24);
@@ -387,6 +394,7 @@ public class AdminDashboard extends javax.swing.JFrame {
         panel.add(top, BorderLayout.NORTH);
         panel.add(new JScrollPane(tblClaims), BorderLayout.CENTER);
 
+        bView.addActionListener(e -> doViewClaimImage());
         bApprove.addActionListener(e -> doResolveClaim("Approved"));
         bReject.addActionListener(e -> doResolveClaim("Rejected"));
         bRefresh.addActionListener(e -> loadClaims());
@@ -394,7 +402,7 @@ public class AdminDashboard extends javax.swing.JFrame {
         return panel;
     }
 
-    // ========================= TAB 3: USERS =========================
+    // ========================= USERS =========================
     private JPanel buildUsersPanel() {
         JPanel panel = new JPanel(new BorderLayout(0, 8));
         panel.setBackground(BG);
@@ -435,7 +443,7 @@ public class AdminDashboard extends javax.swing.JFrame {
         return panel;
     }
 
-    // ========================= TAB 4: RECYCLE BIN =========================
+    // ========================= RECYCLE BIN =========================
     private JPanel buildRecycleBinPanel() {
         JPanel panel = new JPanel(new BorderLayout(0, 8));
         panel.setBackground(BG);
@@ -454,7 +462,7 @@ public class AdminDashboard extends javax.swing.JFrame {
 
         tblRecycleBin = new JTable(new DefaultTableModel(
             new Object[][]{},
-            new String[]{"ID", "Orig. ID", "Item Name", "Category", "Type", "Location", "Date", "Deleted At"}
+            new String[]{"ID", "Orig. ID", "Item Name", "Category", "Type", "Location", "Date & Time", "Deleted At"}
         ) { public boolean isCellEditable(int r, int c) { return false; } });
         tblRecycleBin.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         tblRecycleBin.setRowHeight(24);
@@ -476,7 +484,7 @@ public class AdminDashboard extends javax.swing.JFrame {
         return panel;
     }
 
-    // ========================= TAB 5: BACKUP =========================
+    // ========================= BACKUP =========================
     private JPanel buildBackupPanel() {
         JPanel panel = new JPanel();
         panel.setBackground(BG);
@@ -517,23 +525,36 @@ public class AdminDashboard extends javax.swing.JFrame {
 
     // ========================= DATA LOADING =========================
     private void loadItems() {
+        if (tblItems == null) return;
         String kw = txtSearch == null ? "" : txtSearch.getText().trim();
+        String filterType = cmbFilterType == null ? "All Types" : (String) cmbFilterType.getSelectedItem();
+        String filterCat  = cmbFilterCategory == null ? "All Categories" : (String) cmbFilterCategory.getSelectedItem();
         try {
             Connection conn = DBConnection.getConnection(); if (conn == null) return;
-            String sql = "SELECT i.id, i.item_name, i.description, i.category, i.type, i.location, " +
+            StringBuilder sql = new StringBuilder(
+                "SELECT i.id, i.item_name, i.description, i.category, i.type, i.location, " +
                 "i.date_reported, u.full_name AS reporter, i.status, i.verification_question " +
-                "FROM items i JOIN users u ON i.reported_by=u.id";
-            if (!kw.isEmpty())
-                sql += " WHERE i.item_name LIKE ? OR i.description LIKE ? OR i.category LIKE ? OR i.location LIKE ? OR i.status LIKE ? OR i.type LIKE ?";
-            sql += " ORDER BY i.id DESC";
-            PreparedStatement ps = conn.prepareStatement(sql);
-            if (!kw.isEmpty()) { String s = "%" + kw + "%"; for (int i = 1; i <= 6; i++) ps.setString(i, s); }
+                "FROM items i JOIN users u ON i.reported_by=u.id WHERE 1=1");
+            java.util.List<String> params = new java.util.ArrayList<>();
+            if (!kw.isEmpty()) {
+                sql.append(" AND (i.item_name LIKE ? OR i.description LIKE ? OR i.category LIKE ? OR i.location LIKE ? OR i.status LIKE ?)");
+                String s = "%" + kw + "%"; for (int j = 0; j < 5; j++) params.add(s);
+            }
+            if (!"All Types".equals(filterType)) {
+                sql.append(" AND i.type=?"); params.add(filterType);
+            }
+            if (!"All Categories".equals(filterCat)) {
+                sql.append(" AND i.category=?"); params.add(filterCat);
+            }
+            sql.append(" ORDER BY i.id DESC");
+            PreparedStatement ps = conn.prepareStatement(sql.toString());
+            for (int j = 0; j < params.size(); j++) ps.setString(j + 1, params.get(j));
             ResultSet rs = ps.executeQuery();
             DefaultTableModel m = (DefaultTableModel) tblItems.getModel(); m.setRowCount(0);
             while (rs.next()) {
                 m.addRow(new Object[]{rs.getInt("id"), rs.getString("item_name"), rs.getString("description"),
                     rs.getString("category"), rs.getString("type"), rs.getString("location"),
-                    rs.getString("date_reported"), rs.getString("reporter"), rs.getString("status"),
+                    formatDateTime(rs.getString("date_reported")), rs.getString("reporter"), rs.getString("status"),
                     rs.getString("verification_question") != null ? rs.getString("verification_question") : ""});
             }
             conn.close();
@@ -541,16 +562,17 @@ public class AdminDashboard extends javax.swing.JFrame {
     }
 
     private void loadClaims() {
+        if (tblClaims == null) return;
         try {
             Connection conn = DBConnection.getConnection(); if (conn == null) return;
             ResultSet rs = conn.createStatement().executeQuery(
-                "SELECT c.id, i.item_name, i.category, u.full_name AS claimant, c.message, " +
+                "SELECT c.id, i.item_name, i.category, u.full_name AS claimant, " +
                 "c.verification_answer, c.status, c.created_at " +
                 "FROM claim_requests c JOIN items i ON c.item_id=i.id JOIN users u ON c.requested_by=u.id ORDER BY c.id DESC");
             DefaultTableModel m = (DefaultTableModel) tblClaims.getModel(); m.setRowCount(0);
             while (rs.next()) {
                 m.addRow(new Object[]{rs.getInt("id"), rs.getString("item_name"), rs.getString("category"),
-                    rs.getString("claimant"), rs.getString("message"),
+                    rs.getString("claimant"),
                     rs.getString("verification_answer") != null ? rs.getString("verification_answer") : "N/A",
                     rs.getString("status"), rs.getString("created_at")});
             }
@@ -559,6 +581,7 @@ public class AdminDashboard extends javax.swing.JFrame {
     }
 
     private void loadUsers() {
+        if (tblUsers == null) return;
         try {
             Connection conn = DBConnection.getConnection(); if (conn == null) return;
             ResultSet rs = conn.createStatement().executeQuery(
@@ -573,6 +596,7 @@ public class AdminDashboard extends javax.swing.JFrame {
     }
 
     private void loadRecycleBin() {
+        if (tblRecycleBin == null) return;
         try {
             Connection conn = DBConnection.getConnection(); if (conn == null) return;
             ResultSet rs = conn.createStatement().executeQuery(
@@ -581,7 +605,7 @@ public class AdminDashboard extends javax.swing.JFrame {
             while (rs.next()) {
                 m.addRow(new Object[]{rs.getInt("id"), rs.getInt("original_id"), rs.getString("item_name"),
                     rs.getString("category"), rs.getString("type"), rs.getString("location"),
-                    rs.getString("date_reported"), rs.getString("deleted_at")});
+                    formatDateTime(rs.getString("date_reported")), rs.getString("deleted_at")});
             }
             conn.close();
         } catch (SQLException e) { showError(e); }
@@ -600,12 +624,11 @@ public class AdminDashboard extends javax.swing.JFrame {
 
         JTextField fName = new JTextField(curName);
         JTextField fDesc = new JTextField(curDesc);
-        JComboBox<String> fCat = new JComboBox<>(new String[]{"Electronics","Clothing","Accessories","Documents","Others"});
+        JComboBox<String> fCat = new JComboBox<>(CATEGORIES);
         fCat.setSelectedItem(curCat);
         JComboBox<String> fType = new JComboBox<>(new String[]{"Lost","Found"});
         fType.setSelectedItem(curType);
-        JComboBox<String> fLoc = new JComboBox<>(LOCATIONS);
-        fLoc.setSelectedItem(curLoc);
+        JTextField fLoc = new JTextField(curLoc);
 
         JPanel p = new JPanel(new GridLayout(0, 2, 5, 5));
         p.add(new JLabel("Item Name:")); p.add(fName);
@@ -621,7 +644,7 @@ public class AdminDashboard extends javax.swing.JFrame {
                 "UPDATE items SET item_name=?, description=?, category=?, type=?, location=? WHERE id=?");
             ps.setString(1, fName.getText().trim()); ps.setString(2, fDesc.getText().trim());
             ps.setString(3, fCat.getSelectedItem().toString()); ps.setString(4, fType.getSelectedItem().toString());
-            ps.setString(5, fLoc.getSelectedItem().toString()); ps.setInt(6, id);
+            ps.setString(5, fLoc.getText().trim()); ps.setInt(6, id);
             ps.executeUpdate();
             JOptionPane.showMessageDialog(this, "Item updated!"); loadItems(); conn.close();
         } catch (SQLException e) { showError(e); }
@@ -687,7 +710,7 @@ public class AdminDashboard extends javax.swing.JFrame {
                 sb.append("ID #").append(rs.getInt("id")).append(" - ").append(rs.getString("item_name")).append("\n");
                 sb.append("  Desc     : ").append(rs.getString("description")).append("\n");
                 sb.append("  Location : ").append(rs.getString("location")).append("\n");
-                sb.append("  Date     : ").append(rs.getString("date_reported")).append("\n");
+                sb.append("  Date     : ").append(formatDateTime(rs.getString("date_reported"))).append("\n");
                 sb.append("  By       : ").append(rs.getString("reporter")).append("\n\n");
             }
             if (count == 0) sb.append("No open Found items in category: ").append(category);
@@ -716,10 +739,45 @@ public class AdminDashboard extends javax.swing.JFrame {
     }
 
     // ========================= CLAIM ACTIONS =========================
+    private void doViewClaimImage() {
+        int row = tblClaims.getSelectedRow();
+        if (row == -1) { JOptionPane.showMessageDialog(this, "Select a claim first!"); return; }
+        int claimId = Integer.parseInt(tblClaims.getValueAt(row, 0).toString());
+        try {
+            Connection conn = DBConnection.getConnection(); if (conn == null) return;
+            PreparedStatement ps = conn.prepareStatement("SELECT claim_image FROM claim_requests WHERE id=?");
+            ps.setInt(1, claimId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                byte[] data = rs.getBytes("claim_image");
+                if (data == null || data.length == 0) {
+                    JOptionPane.showMessageDialog(this, "No image attached to this claim.");
+                } else {
+                    showImageDialog(data, "Claim Proof Image - #" + claimId);
+                }
+            }
+            conn.close();
+        } catch (SQLException e) { showError(e); }
+    }
+
+    private void showImageDialog(byte[] data, String title) {
+        try {
+            BufferedImage img = ImageIO.read(new ByteArrayInputStream(data));
+            if (img == null) { JOptionPane.showMessageDialog(this, "Image could not be decoded."); return; }
+            int maxW = 700, maxH = 580;
+            int w = img.getWidth(), h = img.getHeight();
+            double scale = Math.min(1.0, Math.min((double) maxW / w, (double) maxH / h));
+            Image scaled = img.getScaledInstance((int)(w * scale), (int)(h * scale), Image.SCALE_SMOOTH);
+            JOptionPane.showMessageDialog(this, new JLabel(new ImageIcon(scaled)), title, JOptionPane.PLAIN_MESSAGE);
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(this, "Could not display image:\n" + ex.getMessage());
+        }
+    }
+
     private void doResolveClaim(String decision) {
         int row = tblClaims.getSelectedRow();
         if (row == -1) { JOptionPane.showMessageDialog(this, "Select a claim request first!"); return; }
-        String currentStatus = tblClaims.getValueAt(row, 6).toString();
+        String currentStatus = tblClaims.getValueAt(row, 5).toString();
         if (!"Pending".equals(currentStatus)) { JOptionPane.showMessageDialog(this, "Already resolved."); return; }
         int claimId = Integer.parseInt(tblClaims.getValueAt(row, 0).toString());
         if (JOptionPane.showConfirmDialog(this, decision + " this claim?", "Confirm", JOptionPane.YES_NO_OPTION) != 0) return;
@@ -842,6 +900,7 @@ public class AdminDashboard extends javax.swing.JFrame {
                     vq == null ? "NULL" : "'" + esc(vq) + "'", rs.getString("created_at"));
             }
             pw.println();
+            // Note: claim_image (BLOB) is omitted from text backup
             rs = conn.createStatement().executeQuery("SELECT * FROM claim_requests");
             while (rs.next()) {
                 String ra = rs.getString("resolved_at");
@@ -900,6 +959,19 @@ public class AdminDashboard extends javax.swing.JFrame {
     }
 
     // ========================= HELPERS =========================
+    private String formatDateTime(String raw) {
+        if (raw == null) return "";
+        if (raw.endsWith(".0")) raw = raw.substring(0, raw.length() - 2);
+        return raw;
+    }
+
+    private String[] buildFilterCategories() {
+        String[] arr = new String[CATEGORIES.length + 1];
+        arr[0] = "All Categories";
+        System.arraycopy(CATEGORIES, 0, arr, 1, CATEGORIES.length);
+        return arr;
+    }
+
     private String esc(String s) { return s == null ? "" : s.replace("'", "\\'"); }
     private void showError(SQLException e) { JOptionPane.showMessageDialog(this, "Error:\n" + e.getMessage()); }
 
