@@ -154,6 +154,18 @@ public class RegisterForm extends javax.swing.JFrame {
         if (last.isEmpty() || given.isEmpty() || sid.isEmpty() || pass.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Fill in all required fields (*)!"); return;
         }
+        if (last.length() < 2 || given.length() < 2) {
+            JOptionPane.showMessageDialog(this,
+                "Last Name and Given Name must be at least 2 letters long.",
+                "Invalid Name", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        if (!mid.isEmpty() && mid.length() < 2) {
+            JOptionPane.showMessageDialog(this,
+                "Middle Name must be at least 2 letters (do not use initials).",
+                "Invalid Name", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
         if (!sid.matches("\\d{2}-\\d{2}-\\d{4}")) {
             JOptionPane.showMessageDialog(this, "Student ID must follow format: 21-01-1155", "Error", JOptionPane.ERROR_MESSAGE); return;
         }

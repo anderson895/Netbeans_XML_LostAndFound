@@ -40,17 +40,17 @@ public class UserDashboard extends javax.swing.JFrame {
     private CardLayout cardLayout;
     private JTextField txtItemName, txtDescription, txtSearchFound, txtSearchLost, txtLocation;
     private JComboBox<String> cmbCategory, cmbType;
-    private JComboBox<String> cmbYear, cmbMonth, cmbDay, cmbHour, cmbMinute;
+    private JComboBox<String> cmbYear, cmbMonth, cmbDay, cmbHour, cmbMinute, cmbAmPm;
     private JComboBox<String> cmbFilterCategoryFound, cmbFilterCategoryLost;
     private JTable tblMyReports, tblFoundItems, tblLostItems, tblMyClaims;
     private JButton btnSubmit;
-    private JTextField txtProfileLast, txtProfileGiven, txtProfileMiddle, txtProfileSid;
-    private JPasswordField txtProfilePass, txtProfileConf;
+    private JTextField txtProfileCourse, txtProfileYear, txtProfileSection;
+    private JPasswordField txtProfileOldPass, txtProfilePass, txtProfileConf;
+    private JLabel lblProfileName, lblProfileSid, lblProfilePic;
+    private byte[] selectedProfilePic;
 
-    // Picture chosen for claim (kept transient)
-    private byte[] selectedClaimImage;
-
-    private static final String[] CATEGORIES = {"Electronics", "Clothing", "Accessories", "Documents", "Others"};
+    private static final String[] DEFAULT_CATEGORIES = {"Electronics", "Clothing", "Accessories", "Documents", "Add Another..."};
+    private final java.util.List<String> categories = new java.util.ArrayList<>(java.util.Arrays.asList(DEFAULT_CATEGORIES));
 
     public UserDashboard(int userId, String userName) {
         this.userId = userId;
@@ -143,8 +143,14 @@ public class UserDashboard extends javax.swing.JFrame {
         cardsPanel.add(buildProfilePanel(),     CARD_PROFILE);
 
         btnReport.addActionListener(e -> { cardLayout.show(cardsPanel, CARD_REPORT); loadMyReports(); });
-        btnBrowseFound.addActionListener(e -> { cardLayout.show(cardsPanel, CARD_BROWSE_FOUND); loadFoundItems(); });
-        btnBrowseLost.addActionListener(e -> { cardLayout.show(cardsPanel, CARD_BROWSE_LOST); loadLostItems(); });
+        btnBrowseFound.addActionListener(e -> {
+            if (!ensureUserHasReport("Browse Found Items")) return;
+            cardLayout.show(cardsPanel, CARD_BROWSE_FOUND); loadFoundItems();
+        });
+        btnBrowseLost.addActionListener(e -> {
+            if (!ensureUserHasReport("Browse Lost Items")) return;
+            cardLayout.show(cardsPanel, CARD_BROWSE_LOST); loadLostItems();
+        });
         btnClaims.addActionListener(e -> { cardLayout.show(cardsPanel, CARD_CLAIMS); loadMyClaims(); });
         btnProfile.addActionListener(e -> { cardLayout.show(cardsPanel, CARD_PROFILE); loadProfileData(); });
         btnLogout.addActionListener(e -> {
@@ -157,6 +163,30 @@ public class UserDashboard extends javax.swing.JFrame {
         getContentPane().add(sidebar, BorderLayout.WEST);
         getContentPane().add(cardsPanel, BorderLayout.CENTER);
         pack();
+    }
+
+    // Block Browse views unless user has at least one submitted report
+    private boolean ensureUserHasReport(String section) {
+        try {
+            Connection conn = DBConnection.getConnection(); if (conn == null) return false;
+            PreparedStatement ps = conn.prepareStatement("SELECT COUNT(*) FROM items WHERE reported_by=?");
+            ps.setInt(1, userId);
+            ResultSet rs = ps.executeQuery();
+            int count = 0;
+            if (rs.next()) count = rs.getInt(1);
+            conn.close();
+            if (count == 0) {
+                JOptionPane.showMessageDialog(this,
+                    "You need to submit at least one Lost or Found report before you can access \"" + section + "\".",
+                    "Locked", JOptionPane.WARNING_MESSAGE);
+                cardLayout.show(cardsPanel, CARD_REPORT);
+                return false;
+            }
+            return true;
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(this, "Error:\n" + e.getMessage());
+            return false;
+        }
     }
 
     // ==================== REPORT ITEM ====================
@@ -179,8 +209,9 @@ public class UserDashboard extends javax.swing.JFrame {
 
         txtItemName = makeField();
         txtDescription = makeField();
-        cmbCategory = new JComboBox<>(CATEGORIES);
+        cmbCategory = new JComboBox<>(categories.toArray(new String[0]));
         cmbCategory.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        cmbCategory.addActionListener(e -> handleCategorySelection());
         cmbType = new JComboBox<>(new String[]{"Lost", "Found"});
         cmbType.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         txtLocation = makeField();
@@ -196,26 +227,48 @@ public class UserDashboard extends javax.swing.JFrame {
         for (int i = 0; i < 31; i++) days[i] = String.format("%02d", i + 1);
         cmbDay = new JComboBox<>(days);
         cmbDay.setSelectedIndex(Calendar.getInstance().get(Calendar.DAY_OF_MONTH) - 1);
-        String[] hours = new String[24];
-        for (int i = 0; i < 24; i++) hours[i] = String.format("%02d", i);
+
+        // 12-hour with AM/PM
+        String[] hours = new String[12];
+        for (int i = 0; i < 12; i++) hours[i] = String.format("%02d", i + 1);
         cmbHour = new JComboBox<>(hours);
-        cmbHour.setSelectedIndex(Calendar.getInstance().get(Calendar.HOUR_OF_DAY));
+        int curHour24 = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
+        int curHour12 = curHour24 % 12; if (curHour12 == 0) curHour12 = 12;
+        cmbHour.setSelectedIndex(curHour12 - 1);
         String[] minutes = new String[60];
         for (int i = 0; i < 60; i++) minutes[i] = String.format("%02d", i);
         cmbMinute = new JComboBox<>(minutes);
         cmbMinute.setSelectedIndex(Calendar.getInstance().get(Calendar.MINUTE));
+        cmbAmPm = new JComboBox<>(new String[]{"AM", "PM"});
+        cmbAmPm.setSelectedIndex(curHour24 >= 12 ? 1 : 0);
 
         Font cmbFont = new Font("Segoe UI", Font.PLAIN, 12);
         cmbYear.setFont(cmbFont); cmbMonth.setFont(cmbFont); cmbDay.setFont(cmbFont);
-        cmbHour.setFont(cmbFont); cmbMinute.setFont(cmbFont);
+        cmbHour.setFont(cmbFont); cmbMinute.setFont(cmbFont); cmbAmPm.setFont(cmbFont);
 
         JPanel datePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
         datePanel.setBackground(WHITE);
         datePanel.add(cmbYear); datePanel.add(new JLabel("-")); datePanel.add(cmbMonth); datePanel.add(new JLabel("-")); datePanel.add(cmbDay);
 
+        // Time panel with labels for clarity
         JPanel timePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
         timePanel.setBackground(WHITE);
-        timePanel.add(cmbHour); timePanel.add(new JLabel(":")); timePanel.add(cmbMinute);
+        JLabel lblHr = new JLabel("Hour");
+        lblHr.setFont(new Font("Segoe UI", Font.PLAIN, 10)); lblHr.setForeground(GRAY);
+        JLabel lblMn = new JLabel("Min");
+        lblMn.setFont(new Font("Segoe UI", Font.PLAIN, 10)); lblMn.setForeground(GRAY);
+        JPanel hrBox = new JPanel(); hrBox.setBackground(WHITE);
+        hrBox.setLayout(new BoxLayout(hrBox, BoxLayout.Y_AXIS));
+        hrBox.add(lblHr); hrBox.add(cmbHour);
+        JPanel mnBox = new JPanel(); mnBox.setBackground(WHITE);
+        mnBox.setLayout(new BoxLayout(mnBox, BoxLayout.Y_AXIS));
+        mnBox.add(lblMn); mnBox.add(cmbMinute);
+        JPanel apBox = new JPanel(); apBox.setBackground(WHITE);
+        apBox.setLayout(new BoxLayout(apBox, BoxLayout.Y_AXIS));
+        JLabel lblAp = new JLabel("AM / PM");
+        lblAp.setFont(new Font("Segoe UI", Font.PLAIN, 10)); lblAp.setForeground(GRAY);
+        apBox.add(lblAp); apBox.add(cmbAmPm);
+        timePanel.add(hrBox); timePanel.add(new JLabel(":")); timePanel.add(mnBox); timePanel.add(apBox);
 
         btnSubmit = new JButton("SUBMIT REPORT");
         btnSubmit.setFont(new Font("Segoe UI", Font.BOLD, 12));
@@ -228,7 +281,7 @@ public class UserDashboard extends javax.swing.JFrame {
         GroupLayout fl = new GroupLayout(form);
         form.setLayout(fl);
         JLabel l1 = makeLabel("Item Name: *"), l2 = makeLabel("Description:"), l3 = makeLabel("Category:"),
-               l4 = makeLabel("Type: *"), l5 = makeLabel("Location: *"), l6 = makeLabel("Date: *"), l7 = makeLabel("Time: *");
+               l4 = makeLabel("Type: *"), l5 = makeLabel("Location: *"), l6 = makeLabel("Date: * (no future dates)"), l7 = makeLabel("Time: * (12hr AM/PM)");
 
         fl.setHorizontalGroup(fl.createParallelGroup(GroupLayout.Alignment.LEADING)
             .addComponent(lblFormTitle)
@@ -252,7 +305,7 @@ public class UserDashboard extends javax.swing.JFrame {
             .addComponent(l4).addGap(3).addComponent(cmbType, GroupLayout.PREFERRED_SIZE, 28, GroupLayout.PREFERRED_SIZE).addGap(5)
             .addComponent(l5).addGap(3).addComponent(txtLocation, GroupLayout.PREFERRED_SIZE, 28, GroupLayout.PREFERRED_SIZE).addGap(5)
             .addComponent(l6).addGap(3).addComponent(datePanel, GroupLayout.PREFERRED_SIZE, 28, GroupLayout.PREFERRED_SIZE).addGap(5)
-            .addComponent(l7).addGap(3).addComponent(timePanel, GroupLayout.PREFERRED_SIZE, 28, GroupLayout.PREFERRED_SIZE).addGap(12)
+            .addComponent(l7).addGap(3).addComponent(timePanel, GroupLayout.PREFERRED_SIZE, 46, GroupLayout.PREFERRED_SIZE).addGap(12)
             .addGroup(fl.createParallelGroup(GroupLayout.Alignment.BASELINE)
                 .addComponent(btnSubmit, GroupLayout.PREFERRED_SIZE, 34, GroupLayout.PREFERRED_SIZE)
                 .addComponent(btnClear, GroupLayout.PREFERRED_SIZE, 34, GroupLayout.PREFERRED_SIZE))
@@ -266,7 +319,7 @@ public class UserDashboard extends javax.swing.JFrame {
 
         tblMyReports = new JTable(new DefaultTableModel(
             new Object[][]{},
-            new String[]{"ID", "Item Name", "Description", "Category", "Type", "Location", "Date & Time", "Status"}
+            new String[]{"#", "Item Name", "Description", "Category", "Type", "Location", "Date & Time", "Approval", "Status"}
         ) { public boolean isCellEditable(int r, int c) { return false; } });
         tblMyReports.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         tblMyReports.setRowHeight(24);
@@ -283,6 +336,27 @@ public class UserDashboard extends javax.swing.JFrame {
         btnClear.addActionListener(e -> clearFields());
 
         return panel;
+    }
+
+    private void handleCategorySelection() {
+        Object sel = cmbCategory.getSelectedItem();
+        if (sel == null) return;
+        if ("Add Another...".equals(sel)) {
+            String input = JOptionPane.showInputDialog(this,
+                "Enter a new category name:", "Add Another Category",
+                JOptionPane.QUESTION_MESSAGE);
+            if (input == null || input.trim().isEmpty()) {
+                cmbCategory.setSelectedIndex(0);
+                return;
+            }
+            String value = input.trim();
+            if (!categories.contains(value)) {
+                int idx = categories.size() - 1; // insert before "Add Another..."
+                categories.add(idx, value);
+                cmbCategory.insertItemAt(value, idx);
+            }
+            cmbCategory.setSelectedItem(value);
+        }
     }
 
     // ==================== BROWSE FOUND ITEMS ====================
@@ -310,14 +384,19 @@ public class UserDashboard extends javax.swing.JFrame {
         topBar.add(new JLabel("Category:")); topBar.add(cmbFilterCategoryFound);
         topBar.add(btnSearch); topBar.add(btnReset); topBar.add(btnClaim);
 
+        // Per revision: only Item Name, Category, Location
         tblFoundItems = new JTable(new DefaultTableModel(
             new Object[][]{},
-            new String[]{"ID", "Item Name", "Description", "Category", "Location", "Date & Time", "Reported By", "Status"}
+            new String[]{"ID", "Item Name", "Category", "Location"}
         ) { public boolean isCellEditable(int r, int c) { return false; } });
         tblFoundItems.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         tblFoundItems.setRowHeight(24);
         tblFoundItems.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 11));
         tblFoundItems.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+        // Hide the ID column (used internally for actions)
+        tblFoundItems.getColumnModel().getColumn(0).setMinWidth(0);
+        tblFoundItems.getColumnModel().getColumn(0).setMaxWidth(0);
+        tblFoundItems.getColumnModel().getColumn(0).setWidth(0);
 
         JPanel top = new JPanel(new BorderLayout(0, 5));
         top.setBackground(BG);
@@ -360,12 +439,15 @@ public class UserDashboard extends javax.swing.JFrame {
 
         tblLostItems = new JTable(new DefaultTableModel(
             new Object[][]{},
-            new String[]{"ID", "Item Name", "Description", "Category", "Location", "Date & Time", "Reported By", "Status"}
+            new String[]{"ID", "Item Name", "Category", "Location"}
         ) { public boolean isCellEditable(int r, int c) { return false; } });
         tblLostItems.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         tblLostItems.setRowHeight(24);
         tblLostItems.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 11));
         tblLostItems.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+        tblLostItems.getColumnModel().getColumn(0).setMinWidth(0);
+        tblLostItems.getColumnModel().getColumn(0).setMaxWidth(0);
+        tblLostItems.getColumnModel().getColumn(0).setWidth(0);
 
         JPanel top = new JPanel(new BorderLayout(0, 5));
         top.setBackground(BG);
@@ -400,7 +482,7 @@ public class UserDashboard extends javax.swing.JFrame {
         tblMyClaims.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 11));
         tblMyClaims.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
 
-        JButton btnViewImg = makeBtn("VIEW MY PROOF IMAGE", BLUE);
+        JButton btnViewImg = makeBtn("VIEW MY PROOF", BLUE);
         JPanel bar = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 4));
         bar.setBackground(BG);
         bar.add(btnViewImg);
@@ -433,38 +515,51 @@ public class UserDashboard extends javax.swing.JFrame {
         lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 16));
         lblTitle.setForeground(PRIMARY);
 
-        JLabel lblHint = new JLabel("Update your name, student ID, or password. Leave password blank to keep current.");
+        JLabel lblHint = new JLabel("Update your profile photo, course, year, section, or change your password. Name and Student ID are read-only.");
         lblHint.setFont(new Font("Segoe UI", Font.ITALIC, 11));
         lblHint.setForeground(GRAY);
 
-        JLabel lLast = makeLabel("Last Name: *");
-        txtProfileLast = makeField();
-        JLabel lGiven = makeLabel("Given Name: *");
-        txtProfileGiven = makeField();
-        JLabel lMid = makeLabel("Middle Name:");
-        txtProfileMiddle = makeField();
-        JLabel lMidHint = new JLabel("Please use full middle name (not initials)");
-        lMidHint.setFont(new Font("Segoe UI", Font.ITALIC, 10));
-        lMidHint.setForeground(GRAY);
+        // Read-only name/student id
+        JLabel lblNameLbl = makeLabel("Full Name:");
+        lblProfileName = new JLabel("-");
+        lblProfileName.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        JLabel lblSidLbl = makeLabel("Student ID:");
+        lblProfileSid = new JLabel("-");
+        lblProfileSid.setFont(new Font("Segoe UI", Font.PLAIN, 13));
 
-        JLabel lSid = makeLabel("Student ID: *");
-        txtProfileSid = makeField();
-        JLabel lSidHint = new JLabel("Format: 21-01-1155");
-        lSidHint.setFont(new Font("Segoe UI", Font.ITALIC, 10));
-        lSidHint.setForeground(GRAY);
+        // Profile picture
+        JLabel lblPicLbl = makeLabel("Profile Picture:");
+        lblProfilePic = new JLabel();
+        lblProfilePic.setPreferredSize(new Dimension(110, 110));
+        lblProfilePic.setBorder(BorderFactory.createLineBorder(new Color(200, 210, 220)));
+        lblProfilePic.setHorizontalAlignment(SwingConstants.CENTER);
+        lblProfilePic.setText("(no photo)");
+        JButton btnChangePic = new JButton("CHANGE PHOTO");
+        btnChangePic.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        UIHelper.styleButton(btnChangePic, BLUE, WHITE);
+        btnChangePic.addActionListener(e -> doPickProfilePic());
+
+        JLabel lblCourse = makeLabel("Course:");
+        txtProfileCourse = makeField();
+        JLabel lblYear   = makeLabel("Year:");
+        txtProfileYear   = makeField();
+        JLabel lblSection = makeLabel("Section:");
+        txtProfileSection = makeField();
+
+        JLabel lblOld = makeLabel("Old Password:");
+        txtProfileOldPass = new JPasswordField();
+        styleField(txtProfileOldPass);
 
         JLabel lPw = makeLabel("New Password:");
         txtProfilePass = new JPasswordField();
-        txtProfilePass.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        txtProfilePass.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(200, 210, 220)),
-            BorderFactory.createEmptyBorder(4, 8, 4, 8)));
-        JLabel lConf = makeLabel("Confirm Password:");
+        styleField(txtProfilePass);
+        JLabel lConf = makeLabel("Confirm New Password:");
         txtProfileConf = new JPasswordField();
-        txtProfileConf.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        txtProfileConf.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(200, 210, 220)),
-            BorderFactory.createEmptyBorder(4, 8, 4, 8)));
+        styleField(txtProfileConf);
+
+        JLabel lblPwHint = new JLabel("Leave password fields blank if you don't want to change the password.");
+        lblPwHint.setFont(new Font("Segoe UI", Font.ITALIC, 10));
+        lblPwHint.setForeground(GRAY);
 
         JButton btnSave = new JButton("SAVE CHANGES");
         btnSave.setFont(new Font("Segoe UI", Font.BOLD, 12));
@@ -479,12 +574,28 @@ public class UserDashboard extends javax.swing.JFrame {
         fl.setHorizontalGroup(fl.createParallelGroup(GroupLayout.Alignment.LEADING)
             .addComponent(lblTitle)
             .addComponent(lblHint)
-            .addComponent(lLast).addComponent(txtProfileLast, GroupLayout.DEFAULT_SIZE, 400, Short.MAX_VALUE)
-            .addComponent(lGiven).addComponent(txtProfileGiven)
-            .addComponent(lMid).addComponent(txtProfileMiddle).addComponent(lMidHint)
-            .addComponent(lSid).addComponent(txtProfileSid).addComponent(lSidHint)
+            .addGroup(fl.createSequentialGroup()
+                .addGroup(fl.createParallelGroup(GroupLayout.Alignment.LEADING)
+                    .addComponent(lblPicLbl)
+                    .addComponent(lblProfilePic, 110, 110, 110)
+                    .addComponent(btnChangePic, 130, 130, 130))
+                .addGap(20)
+                .addGroup(fl.createParallelGroup(GroupLayout.Alignment.LEADING)
+                    .addComponent(lblNameLbl).addComponent(lblProfileName)
+                    .addComponent(lblSidLbl).addComponent(lblProfileSid)))
+            .addComponent(lblCourse).addComponent(txtProfileCourse, GroupLayout.DEFAULT_SIZE, 400, Short.MAX_VALUE)
+            .addGroup(fl.createSequentialGroup()
+                .addGroup(fl.createParallelGroup(GroupLayout.Alignment.LEADING)
+                    .addComponent(lblYear)
+                    .addComponent(txtProfileYear, GroupLayout.DEFAULT_SIZE, 180, Short.MAX_VALUE))
+                .addGap(15)
+                .addGroup(fl.createParallelGroup(GroupLayout.Alignment.LEADING)
+                    .addComponent(lblSection)
+                    .addComponent(txtProfileSection, GroupLayout.DEFAULT_SIZE, 180, Short.MAX_VALUE)))
+            .addComponent(lblOld).addComponent(txtProfileOldPass)
             .addComponent(lPw).addComponent(txtProfilePass)
             .addComponent(lConf).addComponent(txtProfileConf)
+            .addComponent(lblPwHint)
             .addGroup(fl.createSequentialGroup()
                 .addComponent(btnSave, GroupLayout.PREFERRED_SIZE, 170, GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
@@ -493,14 +604,26 @@ public class UserDashboard extends javax.swing.JFrame {
         fl.setVerticalGroup(fl.createSequentialGroup()
             .addComponent(lblTitle).addGap(5)
             .addComponent(lblHint).addGap(15)
-            .addComponent(lLast).addGap(3).addComponent(txtProfileLast, GroupLayout.PREFERRED_SIZE, 30, GroupLayout.PREFERRED_SIZE).addGap(8)
-            .addComponent(lGiven).addGap(3).addComponent(txtProfileGiven, GroupLayout.PREFERRED_SIZE, 30, GroupLayout.PREFERRED_SIZE).addGap(8)
-            .addComponent(lMid).addGap(3).addComponent(txtProfileMiddle, GroupLayout.PREFERRED_SIZE, 30, GroupLayout.PREFERRED_SIZE).addGap(2)
-            .addComponent(lMidHint).addGap(8)
-            .addComponent(lSid).addGap(3).addComponent(txtProfileSid, GroupLayout.PREFERRED_SIZE, 30, GroupLayout.PREFERRED_SIZE).addGap(2)
-            .addComponent(lSidHint).addGap(8)
+            .addGroup(fl.createParallelGroup(GroupLayout.Alignment.LEADING)
+                .addGroup(fl.createSequentialGroup()
+                    .addComponent(lblPicLbl).addGap(4)
+                    .addComponent(lblProfilePic, GroupLayout.PREFERRED_SIZE, 110, GroupLayout.PREFERRED_SIZE).addGap(5)
+                    .addComponent(btnChangePic, GroupLayout.PREFERRED_SIZE, 30, GroupLayout.PREFERRED_SIZE))
+                .addGroup(fl.createSequentialGroup()
+                    .addComponent(lblNameLbl).addGap(3).addComponent(lblProfileName).addGap(8)
+                    .addComponent(lblSidLbl).addGap(3).addComponent(lblProfileSid)))
+            .addGap(15)
+            .addComponent(lblCourse).addGap(3).addComponent(txtProfileCourse, GroupLayout.PREFERRED_SIZE, 30, GroupLayout.PREFERRED_SIZE).addGap(8)
+            .addGroup(fl.createParallelGroup(GroupLayout.Alignment.LEADING)
+                .addGroup(fl.createSequentialGroup()
+                    .addComponent(lblYear).addGap(3).addComponent(txtProfileYear, GroupLayout.PREFERRED_SIZE, 30, GroupLayout.PREFERRED_SIZE))
+                .addGroup(fl.createSequentialGroup()
+                    .addComponent(lblSection).addGap(3).addComponent(txtProfileSection, GroupLayout.PREFERRED_SIZE, 30, GroupLayout.PREFERRED_SIZE)))
+            .addGap(12)
+            .addComponent(lblOld).addGap(3).addComponent(txtProfileOldPass, GroupLayout.PREFERRED_SIZE, 30, GroupLayout.PREFERRED_SIZE).addGap(8)
             .addComponent(lPw).addGap(3).addComponent(txtProfilePass, GroupLayout.PREFERRED_SIZE, 30, GroupLayout.PREFERRED_SIZE).addGap(8)
-            .addComponent(lConf).addGap(3).addComponent(txtProfileConf, GroupLayout.PREFERRED_SIZE, 30, GroupLayout.PREFERRED_SIZE).addGap(15)
+            .addComponent(lConf).addGap(3).addComponent(txtProfileConf, GroupLayout.PREFERRED_SIZE, 30, GroupLayout.PREFERRED_SIZE).addGap(4)
+            .addComponent(lblPwHint).addGap(15)
             .addGroup(fl.createParallelGroup(GroupLayout.Alignment.BASELINE)
                 .addComponent(btnSave, GroupLayout.PREFERRED_SIZE, 34, GroupLayout.PREFERRED_SIZE)
                 .addComponent(btnReset, GroupLayout.PREFERRED_SIZE, 34, GroupLayout.PREFERRED_SIZE))
@@ -528,14 +651,23 @@ public class UserDashboard extends javax.swing.JFrame {
         try {
             Connection conn = DBConnection.getConnection(); if (conn == null) return;
             PreparedStatement ps = conn.prepareStatement(
-                "SELECT id, item_name, description, category, type, location, date_reported, status FROM items WHERE reported_by=? ORDER BY id DESC");
+                "SELECT id, item_name, description, category, type, location, date_reported, approval_status, status FROM items WHERE reported_by=? ORDER BY id DESC");
             ps.setInt(1, userId);
             ResultSet rs = ps.executeQuery();
             DefaultTableModel m = (DefaultTableModel) tblMyReports.getModel(); m.setRowCount(0);
+            int idx = 1;
             while (rs.next()) {
-                m.addRow(new Object[]{rs.getInt("id"), rs.getString("item_name"), rs.getString("description"),
-                    rs.getString("category"), rs.getString("type"), rs.getString("location"),
-                    formatDateTime(rs.getString("date_reported")), rs.getString("status")});
+                // Update category list with any custom values from DB so they round-trip
+                String cat = rs.getString("category");
+                if (cat != null && !categories.contains(cat) && !"Add Another...".equals(cat)) {
+                    int insertAt = categories.size() - 1;
+                    categories.add(insertAt, cat);
+                    if (cmbCategory != null) cmbCategory.insertItemAt(cat, insertAt);
+                }
+                m.addRow(new Object[]{idx++, rs.getString("item_name"), rs.getString("description"),
+                    cat, rs.getString("type"), rs.getString("location"),
+                    formatDateTime(rs.getString("date_reported")),
+                    rs.getString("approval_status"), rs.getString("status")});
             }
             conn.close();
         } catch (SQLException e) { JOptionPane.showMessageDialog(this, "Error:\n" + e.getMessage()); }
@@ -548,12 +680,12 @@ public class UserDashboard extends javax.swing.JFrame {
         try {
             Connection conn = DBConnection.getConnection(); if (conn == null) return;
             StringBuilder sql = new StringBuilder(
-                "SELECT i.id, i.item_name, i.description, i.category, i.location, i.date_reported, " +
-                "u.full_name AS reporter, i.status FROM items i JOIN users u ON i.reported_by=u.id WHERE i.type='Found'");
+                "SELECT i.id, i.item_name, i.category, i.location " +
+                "FROM items i WHERE i.type='Found' AND i.approval_status='Approved'");
             java.util.List<String> params = new java.util.ArrayList<>();
             if (!kw.isEmpty()) {
-                sql.append(" AND (i.item_name LIKE ? OR i.description LIKE ? OR i.category LIKE ? OR i.location LIKE ?)");
-                String s = "%" + kw + "%"; params.add(s); params.add(s); params.add(s); params.add(s);
+                sql.append(" AND (i.item_name LIKE ? OR i.category LIKE ? OR i.location LIKE ?)");
+                String s = "%" + kw + "%"; params.add(s); params.add(s); params.add(s);
             }
             if (cat != null && !"All Categories".equals(cat)) {
                 sql.append(" AND i.category=?");
@@ -565,9 +697,8 @@ public class UserDashboard extends javax.swing.JFrame {
             ResultSet rs = ps.executeQuery();
             DefaultTableModel m = (DefaultTableModel) tblFoundItems.getModel(); m.setRowCount(0);
             while (rs.next()) {
-                m.addRow(new Object[]{rs.getInt("id"), rs.getString("item_name"), rs.getString("description"),
-                    rs.getString("category"), rs.getString("location"), formatDateTime(rs.getString("date_reported")),
-                    rs.getString("reporter"), rs.getString("status")});
+                m.addRow(new Object[]{rs.getInt("id"), rs.getString("item_name"),
+                    rs.getString("category"), rs.getString("location")});
             }
             conn.close();
         } catch (SQLException e) { JOptionPane.showMessageDialog(this, "Error:\n" + e.getMessage()); }
@@ -580,12 +711,12 @@ public class UserDashboard extends javax.swing.JFrame {
         try {
             Connection conn = DBConnection.getConnection(); if (conn == null) return;
             StringBuilder sql = new StringBuilder(
-                "SELECT i.id, i.item_name, i.description, i.category, i.location, i.date_reported, " +
-                "u.full_name AS reporter, i.status FROM items i JOIN users u ON i.reported_by=u.id WHERE i.type='Lost'");
+                "SELECT i.id, i.item_name, i.category, i.location " +
+                "FROM items i WHERE i.type='Lost' AND i.approval_status='Approved'");
             java.util.List<String> params = new java.util.ArrayList<>();
             if (!kw.isEmpty()) {
-                sql.append(" AND (i.item_name LIKE ? OR i.description LIKE ? OR i.category LIKE ? OR i.location LIKE ?)");
-                String s = "%" + kw + "%"; params.add(s); params.add(s); params.add(s); params.add(s);
+                sql.append(" AND (i.item_name LIKE ? OR i.category LIKE ? OR i.location LIKE ?)");
+                String s = "%" + kw + "%"; params.add(s); params.add(s); params.add(s);
             }
             if (cat != null && !"All Categories".equals(cat)) {
                 sql.append(" AND i.category=?");
@@ -597,9 +728,8 @@ public class UserDashboard extends javax.swing.JFrame {
             ResultSet rs = ps.executeQuery();
             DefaultTableModel m = (DefaultTableModel) tblLostItems.getModel(); m.setRowCount(0);
             while (rs.next()) {
-                m.addRow(new Object[]{rs.getInt("id"), rs.getString("item_name"), rs.getString("description"),
-                    rs.getString("category"), rs.getString("location"), formatDateTime(rs.getString("date_reported")),
-                    rs.getString("reporter"), rs.getString("status")});
+                m.addRow(new Object[]{rs.getInt("id"), rs.getString("item_name"),
+                    rs.getString("category"), rs.getString("location")});
             }
             conn.close();
         } catch (SQLException e) { JOptionPane.showMessageDialog(this, "Error:\n" + e.getMessage()); }
@@ -624,24 +754,67 @@ public class UserDashboard extends javax.swing.JFrame {
     }
 
     private void loadProfileData() {
-        if (txtProfileLast == null) return;
+        if (lblProfileName == null) return;
         try {
             Connection conn = DBConnection.getConnection(); if (conn == null) return;
-            PreparedStatement ps = conn.prepareStatement("SELECT full_name, student_id FROM users WHERE id=?");
+            PreparedStatement ps = conn.prepareStatement(
+                "SELECT full_name, student_id, course, year_level, section, profile_picture FROM users WHERE id=?");
             ps.setInt(1, userId);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
-                String full = rs.getString("full_name");
-                String[] parts = full.split(",\\s*");
-                txtProfileLast.setText(parts.length > 0 ? parts[0] : "");
-                txtProfileGiven.setText(parts.length > 1 ? parts[1] : "");
-                txtProfileMiddle.setText(parts.length > 2 ? parts[2] : "");
-                txtProfileSid.setText(rs.getString("student_id"));
+                lblProfileName.setText(rs.getString("full_name"));
+                lblProfileSid.setText(rs.getString("student_id"));
+                txtProfileCourse.setText(nz(rs.getString("course")));
+                txtProfileYear.setText(nz(rs.getString("year_level")));
+                txtProfileSection.setText(nz(rs.getString("section")));
+                txtProfileOldPass.setText("");
                 txtProfilePass.setText("");
                 txtProfileConf.setText("");
+                byte[] data = rs.getBytes("profile_picture");
+                selectedProfilePic = null;
+                if (data != null && data.length > 0) {
+                    setProfilePicPreview(data);
+                } else {
+                    lblProfilePic.setIcon(null);
+                    lblProfilePic.setText("(no photo)");
+                }
             }
             conn.close();
         } catch (SQLException e) { JOptionPane.showMessageDialog(this, "Error:\n" + e.getMessage()); }
+    }
+
+    private String nz(String s) { return s == null ? "" : s; }
+
+    private void setProfilePicPreview(byte[] data) {
+        try {
+            BufferedImage img = ImageIO.read(new ByteArrayInputStream(data));
+            if (img == null) return;
+            Image scaled = img.getScaledInstance(110, 110, Image.SCALE_SMOOTH);
+            lblProfilePic.setIcon(new ImageIcon(scaled));
+            lblProfilePic.setText("");
+        } catch (IOException e) { /* leave preview as-is */ }
+    }
+
+    private void doPickProfilePic() {
+        JFileChooser fc = new JFileChooser();
+        fc.setDialogTitle("Choose profile picture");
+        fc.setFileFilter(new FileNameExtensionFilter("Image files (jpg, png, gif, bmp)", "jpg", "jpeg", "png", "gif", "bmp"));
+        fc.setAcceptAllFileFilterUsed(false);
+        if (fc.showOpenDialog(this) != JFileChooser.APPROVE_OPTION) return;
+        File f = fc.getSelectedFile();
+        if (f == null || !f.exists()) return;
+        if (f.length() > 4L * 1024 * 1024) {
+            JOptionPane.showMessageDialog(this, "Image is too large (max 4 MB).", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        try (FileInputStream in = new FileInputStream(f); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            byte[] buf = new byte[4096]; int n;
+            while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
+            selectedProfilePic = out.toByteArray();
+            setProfilePicPreview(selectedProfilePic);
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(this, "Could not read image:\n" + ex.getMessage());
+        }
     }
 
     // ==================== ACTIONS ====================
@@ -649,19 +822,50 @@ public class UserDashboard extends javax.swing.JFrame {
         String name = txtItemName.getText().trim();
         String loc  = txtLocation.getText().trim();
         if (name.isEmpty() || loc.isEmpty()) { JOptionPane.showMessageDialog(this, "Fill in all required fields (*)!"); return; }
+
+        Object catSel = cmbCategory.getSelectedItem();
+        if (catSel == null || "Add Another...".equals(catSel)) {
+            JOptionPane.showMessageDialog(this, "Please choose a category (or add one).", "Error", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        // Build datetime — convert 12hr+AM/PM to 24hr storage
+        int hr12 = Integer.parseInt(cmbHour.getSelectedItem().toString());
+        boolean pm = "PM".equals(cmbAmPm.getSelectedItem());
+        int hr24 = hr12 % 12;
+        if (pm) hr24 += 12;
         String dateTime = cmbYear.getSelectedItem() + "-" + cmbMonth.getSelectedItem() + "-" + cmbDay.getSelectedItem()
-            + " " + cmbHour.getSelectedItem() + ":" + cmbMinute.getSelectedItem() + ":00";
+            + " " + String.format("%02d", hr24) + ":" + cmbMinute.getSelectedItem() + ":00";
+
+        // Block future dates
+        try {
+            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            java.util.Date chosen = sdf.parse(dateTime);
+            if (chosen.after(new java.util.Date())) {
+                JOptionPane.showMessageDialog(this,
+                    "You cannot report a date/time in the future.",
+                    "Invalid Date", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+        } catch (java.text.ParseException ex) {
+            JOptionPane.showMessageDialog(this, "Invalid date/time.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
 
         try {
             Connection conn = DBConnection.getConnection(); if (conn == null) return;
             PreparedStatement ps = conn.prepareStatement(
-                "INSERT INTO items (item_name, description, category, type, location, date_reported, reported_by) VALUES (?,?,?,?,?,?,?)");
+                "INSERT INTO items (item_name, description, category, type, location, date_reported, reported_by, approval_status) VALUES (?,?,?,?,?,?,?, 'Pending')");
             ps.setString(1, name); ps.setString(2, txtDescription.getText().trim());
-            ps.setString(3, cmbCategory.getSelectedItem().toString());
+            ps.setString(3, catSel.toString());
             ps.setString(4, cmbType.getSelectedItem().toString());
             ps.setString(5, loc); ps.setString(6, dateTime); ps.setInt(7, userId);
             ps.executeUpdate();
-            JOptionPane.showMessageDialog(this, "Item reported successfully!");
+            JOptionPane.showMessageDialog(this,
+                "Item report submitted successfully!\n\n" +
+                "Status: PENDING\n" +
+                "Your report will be reviewed by the admin before it appears in the public list.",
+                "Submitted", JOptionPane.INFORMATION_MESSAGE);
             clearFields(); loadMyReports(); conn.close();
         } catch (SQLException e) { JOptionPane.showMessageDialog(this, "Error:\n" + e.getMessage()); }
     }
@@ -671,15 +875,11 @@ public class UserDashboard extends javax.swing.JFrame {
         if (row == -1) { JOptionPane.showMessageDialog(this, "Select a found item first!"); return; }
         int itemId = Integer.parseInt(tblFoundItems.getValueAt(row, 0).toString());
         String itemName = tblFoundItems.getValueAt(row, 1).toString();
-        String itemStatus = tblFoundItems.getValueAt(row, 7).toString();
-        if (!"Open".equals(itemStatus)) {
-            JOptionPane.showMessageDialog(this, "This item is no longer Open (status: " + itemStatus + ").",
-                "Cannot Claim", JOptionPane.WARNING_MESSAGE); return;
-        }
         try {
             Connection conn = DBConnection.getConnection(); if (conn == null) return;
 
-            // Block re-claim if user has any Pending or Rejected claim already
+            // Allow claim requests from other users even when one is already pending.
+            // Only block re-submission BY THE SAME USER for the same item.
             PreparedStatement chk = conn.prepareStatement(
                 "SELECT status FROM claim_requests WHERE item_id=? AND requested_by=? AND status IN ('Pending','Rejected')");
             chk.setInt(1, itemId); chk.setInt(2, userId);
@@ -707,24 +907,72 @@ public class UserDashboard extends javax.swing.JFrame {
                 if (verificationA == null) { conn.close(); return; }
             }
 
-            // Picture-based proof of ownership
-            byte[] imgBytes = pickClaimImage(itemName);
-            if (imgBytes == null) { conn.close(); return; }
+            // Choose proof: image OR description
+            String[] options = {"Upload Picture", "Write Description", "Cancel"};
+            int proofChoice = JOptionPane.showOptionDialog(this,
+                "Proof of ownership for \"" + itemName + "\":\n" +
+                "Choose how to prove this item is yours.",
+                "Proof of Ownership",
+                JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE,
+                null, options, options[0]);
+
+            byte[] imgBytes = null;
+            String descProof = null;
+
+            if (proofChoice == 0) {
+                imgBytes = pickClaimImage(itemName);
+                if (imgBytes == null) { conn.close(); return; }
+            } else if (proofChoice == 1) {
+                JTextArea ta = new JTextArea(6, 40);
+                ta.setLineWrap(true); ta.setWrapStyleWord(true);
+                int ok = JOptionPane.showConfirmDialog(this,
+                    new JScrollPane(ta),
+                    "Describe the item (color, marks, brand, contents…)",
+                    JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+                if (ok != JOptionPane.OK_OPTION) { conn.close(); return; }
+                descProof = ta.getText().trim();
+                if (descProof.isEmpty()) {
+                    JOptionPane.showMessageDialog(this, "Description cannot be empty.",
+                        "Error", JOptionPane.ERROR_MESSAGE);
+                    conn.close(); return;
+                }
+            } else {
+                conn.close(); return;
+            }
 
             PreparedStatement ps = conn.prepareStatement(
-                "INSERT INTO claim_requests (item_id, requested_by, message, claim_image, verification_answer) VALUES (?,?,?,?,?)");
+                "INSERT INTO claim_requests (item_id, requested_by, message, description_proof, claim_image, verification_answer) VALUES (?,?,?,?,?,?)");
             ps.setInt(1, itemId); ps.setInt(2, userId);
-            ps.setString(3, "[image proof attached]");
-            ps.setBytes(4, imgBytes);
-            ps.setString(5, verificationA);
+            ps.setString(3, imgBytes != null ? "[image proof attached]" : "[description proof]");
+            ps.setString(4, descProof);
+            ps.setBytes(5, imgBytes);
+            ps.setString(6, verificationA);
             ps.executeUpdate();
 
-            PreparedStatement up = conn.prepareStatement("UPDATE items SET status='Claim Pending' WHERE id=?");
-            up.setInt(1, itemId); up.executeUpdate();
+            // NOTE: Do NOT flip item status to "Claim Pending" — keep the item Open so other
+            // users can still see and claim it. Admin decides which claim wins.
 
-            JOptionPane.showMessageDialog(this, "Claim request submitted with photo proof! Admin will review it.");
+            showClaimInstructions(itemName);
             loadFoundItems(); loadMyClaims(); conn.close();
         } catch (SQLException e) { JOptionPane.showMessageDialog(this, "Error:\n" + e.getMessage()); }
+    }
+
+    private void showClaimInstructions(String itemName) {
+        String html =
+            "<html><div style='width:340px;font-family:Segoe UI;'>" +
+            "<h3 style='color:#19376D;margin:0 0 6px 0;'>Claim Submitted</h3>" +
+            "<p>Your request for <b>" + itemName + "</b> has been submitted. Please follow these instructions:</p>" +
+            "<ul>" +
+            "<li>Proceed to the <b>Office of Student Affairs</b> if you found an item, to turn it in.</li>" +
+            "<li>You can claim your item at the <b>Office of Student Affairs</b>.</li>" +
+            "<li><b>Office Hours:</b> 07:00 AM &ndash; 06:00 PM</li>" +
+            "<li><b>Open:</b> Tuesday &ndash; Friday</li>" +
+            "<li>For inquiries, please see the <b>front desk</b>.</li>" +
+            "<li>Bring a <b>valid school ID</b> as additional proof of identity.</li>" +
+            "</ul>" +
+            "</div></html>";
+        JOptionPane.showMessageDialog(this, new JLabel(html),
+            "Next Steps", JOptionPane.INFORMATION_MESSAGE);
     }
 
     private byte[] pickClaimImage(String itemName) {
@@ -744,7 +992,6 @@ public class UserDashboard extends javax.swing.JFrame {
             while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
             byte[] bytes = out.toByteArray();
 
-            // Confirm preview
             ImageIcon raw = new ImageIcon(bytes);
             Image scaled = raw.getImage().getScaledInstance(280, -1, Image.SCALE_SMOOTH);
             int ok = JOptionPane.showConfirmDialog(this, new JLabel(new ImageIcon(scaled)),
@@ -764,15 +1011,22 @@ public class UserDashboard extends javax.swing.JFrame {
         int claimId = Integer.parseInt(tblMyClaims.getValueAt(row, 0).toString());
         try {
             Connection conn = DBConnection.getConnection(); if (conn == null) return;
-            PreparedStatement ps = conn.prepareStatement("SELECT claim_image FROM claim_requests WHERE id=? AND requested_by=?");
+            PreparedStatement ps = conn.prepareStatement(
+                "SELECT claim_image, description_proof FROM claim_requests WHERE id=? AND requested_by=?");
             ps.setInt(1, claimId); ps.setInt(2, userId);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
                 byte[] data = rs.getBytes("claim_image");
-                if (data == null || data.length == 0) {
-                    JOptionPane.showMessageDialog(this, "No image attached to this claim.");
-                } else {
+                String descProof = rs.getString("description_proof");
+                if (data != null && data.length > 0) {
                     showImageDialog(data, "Claim Image - #" + claimId);
+                } else if (descProof != null && !descProof.isEmpty()) {
+                    JTextArea ta = new JTextArea(descProof, 10, 40);
+                    ta.setEditable(false); ta.setLineWrap(true); ta.setWrapStyleWord(true);
+                    JOptionPane.showMessageDialog(this, new JScrollPane(ta),
+                        "Description Proof - Claim #" + claimId, JOptionPane.PLAIN_MESSAGE);
+                } else {
+                    JOptionPane.showMessageDialog(this, "No proof attached to this claim.");
                 }
             }
             conn.close();
@@ -794,51 +1048,74 @@ public class UserDashboard extends javax.swing.JFrame {
     }
 
     private void doSaveProfile() {
-        String last = txtProfileLast.getText().trim();
-        String given = txtProfileGiven.getText().trim();
-        String mid = txtProfileMiddle.getText().trim();
-        String sid = txtProfileSid.getText().trim();
-        String pw = new String(txtProfilePass.getPassword()).trim();
-        String pwc = new String(txtProfileConf.getPassword()).trim();
+        String course = txtProfileCourse.getText().trim();
+        String year   = txtProfileYear.getText().trim();
+        String sect   = txtProfileSection.getText().trim();
+        String oldPw  = new String(txtProfileOldPass.getPassword()).trim();
+        String pw     = new String(txtProfilePass.getPassword()).trim();
+        String pwc    = new String(txtProfileConf.getPassword()).trim();
 
-        if (last.isEmpty() || given.isEmpty() || sid.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Last name, given name, and student ID are required."); return;
-        }
-        if (!sid.matches("\\d{2}-\\d{2}-\\d{4}")) {
-            JOptionPane.showMessageDialog(this, "Student ID must follow format: 21-01-1155", "Error", JOptionPane.ERROR_MESSAGE); return;
-        }
-        if (!pw.isEmpty()) {
+        boolean wantsPwChange = !pw.isEmpty() || !pwc.isEmpty() || !oldPw.isEmpty();
+        if (wantsPwChange) {
+            if (oldPw.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Enter your current (old) password to change it.",
+                    "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            if (pw.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Enter a new password.",
+                    "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
             if (pw.length() < 6) {
-                JOptionPane.showMessageDialog(this, "Password must be at least 6 characters!", "Error", JOptionPane.ERROR_MESSAGE); return;
+                JOptionPane.showMessageDialog(this, "Password must be at least 6 characters!", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
             }
             if (!pw.equals(pwc)) {
-                JOptionPane.showMessageDialog(this, "Passwords do not match!", "Error", JOptionPane.ERROR_MESSAGE); return;
+                JOptionPane.showMessageDialog(this, "New passwords do not match!", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
             }
         }
-
-        String fullName = last + ", " + given;
-        if (!mid.isEmpty()) fullName += ", " + mid;
 
         try {
             Connection conn = DBConnection.getConnection(); if (conn == null) return;
-            PreparedStatement chk = conn.prepareStatement("SELECT id FROM users WHERE student_id=? AND id<>?");
-            chk.setString(1, sid); chk.setInt(2, userId);
-            if (chk.executeQuery().next()) {
-                JOptionPane.showMessageDialog(this, "That Student ID is already used by another account.",
-                    "Error", JOptionPane.ERROR_MESSAGE);
-                conn.close(); return;
+            if (wantsPwChange) {
+                PreparedStatement chk = conn.prepareStatement("SELECT password FROM users WHERE id=?");
+                chk.setInt(1, userId);
+                ResultSet rs = chk.executeQuery();
+                if (!rs.next() || !oldPw.equals(rs.getString("password"))) {
+                    JOptionPane.showMessageDialog(this, "Old password is incorrect.",
+                        "Error", JOptionPane.ERROR_MESSAGE);
+                    conn.close(); return;
+                }
             }
-            if (pw.isEmpty()) {
-                PreparedStatement ps = conn.prepareStatement("UPDATE users SET full_name=?, student_id=? WHERE id=?");
-                ps.setString(1, fullName); ps.setString(2, sid); ps.setInt(3, userId); ps.executeUpdate();
-            } else {
-                PreparedStatement ps = conn.prepareStatement("UPDATE users SET full_name=?, student_id=?, password=? WHERE id=?");
-                ps.setString(1, fullName); ps.setString(2, sid); ps.setString(3, pw); ps.setInt(4, userId); ps.executeUpdate();
+
+            // Build dynamic update
+            StringBuilder sql = new StringBuilder(
+                "UPDATE users SET course=?, year_level=?, section=?");
+            java.util.List<Object> params = new java.util.ArrayList<>();
+            params.add(course); params.add(year); params.add(sect);
+            if (selectedProfilePic != null) {
+                sql.append(", profile_picture=?");
+                params.add(selectedProfilePic);
             }
-            this.userName = fullName;
-            setTitle("User Dashboard - " + userName);
+            if (wantsPwChange) {
+                sql.append(", password=?");
+                params.add(pw);
+            }
+            sql.append(" WHERE id=?");
+            params.add(userId);
+
+            PreparedStatement ps = conn.prepareStatement(sql.toString());
+            for (int i = 0; i < params.size(); i++) {
+                Object p = params.get(i);
+                if (p instanceof byte[]) ps.setBytes(i + 1, (byte[]) p);
+                else if (p instanceof Integer) ps.setInt(i + 1, (Integer) p);
+                else ps.setString(i + 1, p == null ? "" : p.toString());
+            }
+            ps.executeUpdate();
             JOptionPane.showMessageDialog(this, "Profile updated!");
-            txtProfilePass.setText(""); txtProfileConf.setText("");
+            txtProfileOldPass.setText(""); txtProfilePass.setText(""); txtProfileConf.setText("");
             conn.close();
         } catch (SQLException e) { JOptionPane.showMessageDialog(this, "Error:\n" + e.getMessage()); }
     }
@@ -851,8 +1128,11 @@ public class UserDashboard extends javax.swing.JFrame {
         cmbMonth.setSelectedIndex(cal.get(Calendar.MONTH));
         int d = cal.get(Calendar.DAY_OF_MONTH) - 1;
         if (d >= 0 && d < cmbDay.getItemCount()) cmbDay.setSelectedIndex(d);
-        cmbHour.setSelectedIndex(cal.get(Calendar.HOUR_OF_DAY));
+        int curHour24 = cal.get(Calendar.HOUR_OF_DAY);
+        int curHour12 = curHour24 % 12; if (curHour12 == 0) curHour12 = 12;
+        cmbHour.setSelectedIndex(curHour12 - 1);
         cmbMinute.setSelectedIndex(cal.get(Calendar.MINUTE));
+        cmbAmPm.setSelectedIndex(curHour24 >= 12 ? 1 : 0);
     }
 
     // ── Helper methods ──
@@ -863,10 +1143,12 @@ public class UserDashboard extends javax.swing.JFrame {
     }
 
     private String[] buildFilterCategories() {
-        String[] arr = new String[CATEGORIES.length + 1];
-        arr[0] = "All Categories";
-        System.arraycopy(CATEGORIES, 0, arr, 1, CATEGORIES.length);
-        return arr;
+        java.util.List<String> values = new java.util.ArrayList<>();
+        values.add("All Categories");
+        for (String c : categories) {
+            if (!"Add Another...".equals(c)) values.add(c);
+        }
+        return values.toArray(new String[0]);
     }
 
     private JButton makeSidebarBtn(String text) {
@@ -889,5 +1171,11 @@ public class UserDashboard extends javax.swing.JFrame {
             BorderFactory.createLineBorder(new Color(200, 210, 220)),
             BorderFactory.createEmptyBorder(4, 8, 4, 8)));
         return f;
+    }
+    private void styleField(JTextField f) {
+        f.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        f.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(200, 210, 220)),
+            BorderFactory.createEmptyBorder(4, 8, 4, 8)));
     }
 }

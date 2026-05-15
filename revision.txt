@@ -1,21 +1,51 @@
-Need daw po i-hide yung button sa taas useless na daw lo kase meron na daw po sa gilid....
-
-user dash board dagdagan daw po ng edit profile 
-
-request claim - picture not text daw po...
-
-browser found item - visible to all users kahit found na daw po dapat
-visible parin
-
-browser lost item - visible to all users din daw po para alam daw po nila yung ike-claim nila na gamit nila
-
-location - text field na lang daw po
-
-middle name na lang daw po wag na ilagay yung initials
-
-okay na po yung sa date, pero lagyan daw po ng time.
+LOG IN USER
+-tanggalin ang footer
+-palitan ang id ipalit yung "account" 
+- lagyan ng logo nung ascot 
 
 
-Sa category and type daw po dapat may filter kumabag kuya pag found po lahat po ng found yun lang ang makikita
+yung sa pag re-register dapat po hindipwede maka register pag isang letter po yung linagay sa last name or given name
 
-tapos pag daw po na reject na yung claim requests di na daw po dapat maulit yung request ng user sa item na yun...
+USER DASHBOARD 
+Browse found and Lost Items Section
+-remove remove description ,type, date and time, reported by and status (dapat lang po dapat ang meron na ganito)
+
+Report Item Section 
+- change ID to numbering
+-palitan yung others sa category, ng Add Another (for another entry na wala sa pag pipilian, yung pwede mag add ang user) 
+-palitan yung date dapat de nag aadvance report 
+-lagyan ng label kung hour or minutes (24hrs dapat, hindi naka military) lagyan din ng am or pm para alam kung umaga or hapon.
+- lahat ng users report dapat naka pending muna hanggang di na a-approve ng admin.
+- hanggang walang na sa submit yung user na kahit anong report of lost or found, user can't view any lost or found na na-approved na ng admin.
+
+Request Claim Section 
+-dagdagan yung upload picture ng option na description para may ibang option ang user pag wala talaga silang picture ng item na nawala. 
+-dapat open pa rin yung request claim sa lahat ng users kahit may nag request claim na.
+-dapat lahat ng report items pending,
+i approved palang dapat ni admin lahat ng user's report 
+-pagka click ng submit dapat may instructions kung ano ang gagawin na next. like this:
+• pupunta sa Office of Students Affairs to bring the found item.
+• You can claim your item in Office of Students Affairs.
+• Office Hour 07:00 am - 06:00 pm, 
+• We Are Open From Tuesday - Friday
+• For Inquiries, see the front desk.
+(you can add pa po if ano po yung mas better)
+
+EDIT PROFILE SECTION 
+-password lang dapat mapapalitan
+-lagyan ng input old password 
+-lagyan ng course, year, section and picture (yung picture dapat pwede mapalitan)
+
+
+ADMIN 
+-dapat may audit trail para makita kung anong araw at oras binago 
+
+ANALYTICS SECTION 
+-lagyan ng filter
+-custom date para makita agad yung mga old reports
+
+BACK UP 
+-kasama dapat yung image sa back up
+-encrypted na dapat yung file
+(Palakihin yung font, Then Ilagay na lang sa center)
+

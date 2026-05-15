@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(javac --version)",
+      "Bash(javac -d /tmp/lf-check src/lostandfound/*.java)",
+      "Bash(javac -d /tmp/lf-check2 src/lostandfound/*.java)",
+      "Bash(javac -d /tmp/lf-check3 src/lostandfound/*.java)"
+    ]
+  }
+}
