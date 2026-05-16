@@ -98,9 +98,9 @@ public class LoginForm extends javax.swing.JFrame {
         GroupLayout fl = new GroupLayout(formPanel);
         formPanel.setLayout(fl);
         fl.setHorizontalGroup(fl.createParallelGroup(GroupLayout.Alignment.LEADING)
-            .addComponent(lblLogo)
-            .addComponent(lblTitle)
-            .addComponent(lblSubtitle)
+            .addComponent(lblLogo, GroupLayout.Alignment.CENTER, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+            .addComponent(lblTitle, GroupLayout.Alignment.CENTER, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+            .addComponent(lblSubtitle, GroupLayout.Alignment.CENTER, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
             .addComponent(lblSignIn, GroupLayout.DEFAULT_SIZE, 320, 320)
             .addComponent(lblStudentId)
             .addComponent(txtStudentId, GroupLayout.DEFAULT_SIZE, 320, 320)

@@ -1,6 +1,7 @@
 package lostandfound;
 
 import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.sql.*;
 import javax.swing.*;
 
@@ -47,6 +48,9 @@ public class RegisterForm extends javax.swing.JFrame {
             BorderFactory.createLineBorder(new Color(200, 210, 220), 1),
             BorderFactory.createEmptyBorder(25, 35, 25, 35)));
 
+        // ASCOT logo above the title
+        JLabel lblLogo = new JLabel(new ImageIcon(loadAscotLogo(56)));
+
         // Title inside the form (replaces the old top blue header)
         JLabel lblTitle = new JLabel("CREATE ACCOUNT");
         lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 20));
@@ -62,7 +66,7 @@ public class RegisterForm extends javax.swing.JFrame {
         txtGivenName = makeField();
         JLabel lblMN = makeLabel("Middle Name:");
         txtMiddleName = makeField();
-        JLabel lblNameHint = new JLabel("Please enter full middle name (not initials). Stored as: Last Name, Given Name, Middle Name");
+        JLabel lblNameHint = new JLabel("<html>Please enter full middle name (not initials).<br>Stored as: Last Name, Given Name, Middle Name</html>");
         lblNameHint.setFont(new Font("Segoe UI", Font.ITALIC, 10));
         lblNameHint.setForeground(TEXT_MUTED);
 
@@ -99,8 +103,9 @@ public class RegisterForm extends javax.swing.JFrame {
         formPanel.setLayout(fl);
         final int FIELD_W = 380;
         fl.setHorizontalGroup(fl.createParallelGroup(GroupLayout.Alignment.LEADING)
-            .addComponent(lblTitle)
-            .addComponent(lblNote, GroupLayout.DEFAULT_SIZE, FIELD_W, FIELD_W)
+            .addComponent(lblLogo, GroupLayout.Alignment.CENTER, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+            .addComponent(lblTitle, GroupLayout.Alignment.CENTER, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+            .addComponent(lblNote, GroupLayout.Alignment.CENTER, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
             .addComponent(lblLN)
             .addComponent(txtLastName, GroupLayout.DEFAULT_SIZE, FIELD_W, FIELD_W)
             .addComponent(lblGN)
@@ -121,6 +126,7 @@ public class RegisterForm extends javax.swing.JFrame {
                 .addComponent(btnBack, GroupLayout.PREFERRED_SIZE, 185, GroupLayout.PREFERRED_SIZE))
         );
         fl.setVerticalGroup(fl.createSequentialGroup()
+            .addComponent(lblLogo).addGap(6)
             .addComponent(lblTitle).addGap(8)
             .addComponent(lblNote).addGap(10)
             .addComponent(lblLN).addGap(3).addComponent(txtLastName, GroupLayout.PREFERRED_SIZE, 32, GroupLayout.PREFERRED_SIZE).addGap(5)
@@ -150,7 +156,7 @@ public class RegisterForm extends javax.swing.JFrame {
         root.add(bgPanel);
         root.add(rightPanel);
 
-        setPreferredSize(new Dimension(1000, 680));
+        setPreferredSize(new Dimension(1110, 720));
         pack();
 
         // ── Actions ──
@@ -226,6 +232,41 @@ public class RegisterForm extends javax.swing.JFrame {
             BorderFactory.createLineBorder(new Color(200, 210, 220)),
             BorderFactory.createEmptyBorder(5, 8, 5, 8)));
         return f;
+    }
+
+    // Load ASCOT logo from the classpath; falls back to a drawn logo if the PNG is missing.
+    private Image loadAscotLogo(int size) {
+        java.net.URL url = RegisterForm.class.getResource("ascot_logo.png");
+        if (url == null) url = RegisterForm.class.getResource("/lostandfound/ascot_logo.png");
+        if (url != null) {
+            try {
+                BufferedImage raw = javax.imageio.ImageIO.read(url);
+                if (raw != null) {
+                    return raw.getScaledInstance(size, size, Image.SCALE_SMOOTH);
+                }
+            } catch (java.io.IOException ignore) { }
+        }
+        return buildAscotLogo(size);
+    }
+
+    private BufferedImage buildAscotLogo(int size) {
+        BufferedImage img = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = img.createGraphics();
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        g.setColor(new Color(212, 175, 55));
+        g.fillOval(0, 0, size, size);
+        int pad = 4;
+        g.setColor(Color.WHITE);
+        g.fillOval(pad, pad, size - pad * 2, size - pad * 2);
+        g.setColor(new Color(15, 35, 85));
+        g.setFont(new Font("Serif", Font.BOLD, Math.max(12, size / 4)));
+        FontMetrics fm = g.getFontMetrics();
+        String text = "ASCOT";
+        int tw = fm.stringWidth(text);
+        g.drawString(text, (size - tw) / 2, size / 2 + fm.getAscent() / 3);
+        g.dispose();
+        return img;
     }
 
     // Paints Background.png as a cover-scaled photo backdrop (same as LoginForm).
