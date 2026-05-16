@@ -25,26 +25,32 @@ public class RegisterForm extends javax.swing.JFrame {
     private void initComponents() {
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("ASCOT - Create Account");
-        setMinimumSize(new Dimension(440, 520));
-        getContentPane().setBackground(BG_COLOR);
+        setMinimumSize(new Dimension(900, 620));
 
-        // ── Header ──
-        JPanel headerPanel = new JPanel();
-        headerPanel.setBackground(PRIMARY);
-        headerPanel.setPreferredSize(new Dimension(0, 70));
-        JLabel lblTitle = new JLabel("CREATE ACCOUNT");
-        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 20));
-        lblTitle.setForeground(WHITE);
-        lblTitle.setHorizontalAlignment(SwingConstants.CENTER);
-        headerPanel.setLayout(new BorderLayout());
-        headerPanel.add(lblTitle, BorderLayout.CENTER);
+        // Root content pane — split layout (background left, form right)
+        JPanel root = new JPanel(new GridLayout(1, 2));
+        root.setBackground(BG_COLOR);
+        setContentPane(root);
+
+        // ── Left side: Background.png ──
+        BackgroundPanel bgPanel = new BackgroundPanel();
+        bgPanel.setLayout(new BorderLayout());
+
+        // ── Right side: form area ──
+        JPanel rightPanel = new JPanel(new GridBagLayout());
+        rightPanel.setBackground(BG_COLOR);
 
         // ── Form ──
         JPanel formPanel = new JPanel();
         formPanel.setBackground(WHITE);
         formPanel.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(new Color(200, 210, 220), 1),
-            BorderFactory.createEmptyBorder(20, 30, 20, 30)));
+            BorderFactory.createEmptyBorder(25, 35, 25, 35)));
+
+        // Title inside the form (replaces the old top blue header)
+        JLabel lblTitle = new JLabel("CREATE ACCOUNT");
+        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        lblTitle.setForeground(PRIMARY);
 
         JLabel lblNote = new JLabel("(All new accounts are registered as User)");
         lblNote.setFont(new Font("Segoe UI", Font.ITALIC, 11));
@@ -91,22 +97,31 @@ public class RegisterForm extends javax.swing.JFrame {
         // ── Form layout ──
         GroupLayout fl = new GroupLayout(formPanel);
         formPanel.setLayout(fl);
+        final int FIELD_W = 380;
         fl.setHorizontalGroup(fl.createParallelGroup(GroupLayout.Alignment.LEADING)
-            .addComponent(lblNote, GroupLayout.DEFAULT_SIZE, 380, Short.MAX_VALUE)
-            .addComponent(lblLN).addComponent(txtLastName)
-            .addComponent(lblGN).addComponent(txtGivenName)
-            .addComponent(lblMN).addComponent(txtMiddleName)
-            .addComponent(lblNameHint)
-            .addComponent(lblSid).addComponent(txtStudentId)
+            .addComponent(lblTitle)
+            .addComponent(lblNote, GroupLayout.DEFAULT_SIZE, FIELD_W, FIELD_W)
+            .addComponent(lblLN)
+            .addComponent(txtLastName, GroupLayout.DEFAULT_SIZE, FIELD_W, FIELD_W)
+            .addComponent(lblGN)
+            .addComponent(txtGivenName, GroupLayout.DEFAULT_SIZE, FIELD_W, FIELD_W)
+            .addComponent(lblMN)
+            .addComponent(txtMiddleName, GroupLayout.DEFAULT_SIZE, FIELD_W, FIELD_W)
+            .addComponent(lblNameHint, GroupLayout.DEFAULT_SIZE, FIELD_W, FIELD_W)
+            .addComponent(lblSid)
+            .addComponent(txtStudentId, GroupLayout.DEFAULT_SIZE, FIELD_W, FIELD_W)
             .addComponent(lblSidHint)
-            .addComponent(lblPw).addComponent(txtPassword)
-            .addComponent(lblConf).addComponent(txtConfirm)
+            .addComponent(lblPw)
+            .addComponent(txtPassword, GroupLayout.DEFAULT_SIZE, FIELD_W, FIELD_W)
+            .addComponent(lblConf)
+            .addComponent(txtConfirm, GroupLayout.DEFAULT_SIZE, FIELD_W, FIELD_W)
             .addGroup(fl.createSequentialGroup()
                 .addComponent(btnRegister, GroupLayout.PREFERRED_SIZE, 185, GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(btnBack, GroupLayout.PREFERRED_SIZE, 185, GroupLayout.PREFERRED_SIZE))
         );
         fl.setVerticalGroup(fl.createSequentialGroup()
+            .addComponent(lblTitle).addGap(8)
             .addComponent(lblNote).addGap(10)
             .addComponent(lblLN).addGap(3).addComponent(txtLastName, GroupLayout.PREFERRED_SIZE, 32, GroupLayout.PREFERRED_SIZE).addGap(5)
             .addComponent(lblGN).addGap(3).addComponent(txtGivenName, GroupLayout.PREFERRED_SIZE, 32, GroupLayout.PREFERRED_SIZE).addGap(5)
@@ -121,21 +136,21 @@ public class RegisterForm extends javax.swing.JFrame {
                 .addComponent(btnBack, GroupLayout.PREFERRED_SIZE, 38, GroupLayout.PREFERRED_SIZE))
         );
 
-        // ── Main layout using BorderLayout for responsiveness ──
-        getContentPane().setLayout(new BorderLayout());
-        getContentPane().add(headerPanel, BorderLayout.NORTH);
-
-        JPanel wrapper = new JPanel(new GridBagLayout());
-        wrapper.setBackground(BG_COLOR);
+        // ── Split layout: background image on left, form on right ──
+        // fill = NONE keeps the form card at its preferred width when the window
+        // is maximized — the form stays centered instead of stretching across.
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(20, 25, 20, 25);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(20, 35, 20, 35);
+        gbc.fill = GridBagConstraints.NONE;
         gbc.weightx = 1.0;
-        gbc.anchor = GridBagConstraints.NORTH;
         gbc.weighty = 1.0;
-        wrapper.add(formPanel, gbc);
+        gbc.anchor = GridBagConstraints.CENTER;
+        rightPanel.add(formPanel, gbc);
 
-        getContentPane().add(wrapper, BorderLayout.CENTER);
+        root.add(bgPanel);
+        root.add(rightPanel);
+
+        setPreferredSize(new Dimension(1000, 680));
         pack();
 
         // ── Actions ──
@@ -211,5 +226,39 @@ public class RegisterForm extends javax.swing.JFrame {
             BorderFactory.createLineBorder(new Color(200, 210, 220)),
             BorderFactory.createEmptyBorder(5, 8, 5, 8)));
         return f;
+    }
+
+    // Paints Background.png as a cover-scaled photo backdrop (same as LoginForm).
+    private static class BackgroundPanel extends JPanel {
+        private final Image bg;
+        BackgroundPanel() {
+            setOpaque(true);
+            setBackground(new Color(236, 240, 245));
+            Image loaded = null;
+            try {
+                java.net.URL url = RegisterForm.class.getResource("Background.png");
+                if (url == null) url = RegisterForm.class.getResource("/lostandfound/Background.png");
+                if (url != null) loaded = javax.imageio.ImageIO.read(url);
+            } catch (java.io.IOException ignore) { }
+            this.bg = loaded;
+        }
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            if (bg == null) return;
+            int pw = getWidth(), ph = getHeight();
+            int iw = bg.getWidth(null), ih = bg.getHeight(null);
+            if (iw <= 0 || ih <= 0) return;
+            double scale = Math.max(pw / (double) iw, ph / (double) ih);
+            int dw = (int) Math.round(iw * scale);
+            int dh = (int) Math.round(ih * scale);
+            int dx = (pw - dw) / 2;
+            int dy = (ph - dh) / 2;
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
+                    RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            g2.drawImage(bg, dx, dy, dw, dh, this);
+            g2.dispose();
+        }
     }
 }

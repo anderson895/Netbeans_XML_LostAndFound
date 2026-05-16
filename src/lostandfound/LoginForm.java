@@ -23,46 +23,20 @@ public class LoginForm extends javax.swing.JFrame {
     private void initComponents() {
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("ASCOT - Lost and Found System");
-        setMinimumSize(new Dimension(720, 520));
+        setMinimumSize(new Dimension(900, 560));
 
-        // Background photo as the root content pane (cover-scaled, no stretch)
+        // Root content pane — plain background; split layout below
+        JPanel root = new JPanel(new GridLayout(1, 2));
+        root.setBackground(BG_COLOR);
+        setContentPane(root);
+
+        // ── Left side: Background.png ──
         BackgroundPanel bgPanel = new BackgroundPanel();
         bgPanel.setLayout(new BorderLayout());
-        setContentPane(bgPanel);
 
-        // ── Header panel ──
-        JPanel headerPanel = new JPanel();
-        headerPanel.setBackground(PRIMARY);
-        headerPanel.setPreferredSize(new Dimension(0, 110));
-        headerPanel.setLayout(new BoxLayout(headerPanel, BoxLayout.X_AXIS));
-        headerPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
-
-        // ASCOT logo — loaded from src/lostandfound/ascot_logo.png; falls back to a drawn logo if missing
-        JLabel lblLogo = new JLabel(new ImageIcon(loadAscotLogo(70)));
-        lblLogo.setAlignmentY(Component.CENTER_ALIGNMENT);
-
-        JPanel titleBox = new JPanel();
-        titleBox.setOpaque(false);
-        titleBox.setLayout(new BoxLayout(titleBox, BoxLayout.Y_AXIS));
-
-        JLabel lblTitle = new JLabel("LOST AND FOUND SYSTEM");
-        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 22));
-        lblTitle.setForeground(WHITE);
-
-        JLabel lblSubtitle = new JLabel("Aurora State College of Technology");
-        lblSubtitle.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        lblSubtitle.setForeground(new Color(180, 210, 255));
-
-        titleBox.add(Box.createVerticalGlue());
-        titleBox.add(lblTitle);
-        titleBox.add(Box.createVerticalStrut(4));
-        titleBox.add(lblSubtitle);
-        titleBox.add(Box.createVerticalGlue());
-
-        headerPanel.add(lblLogo);
-        headerPanel.add(Box.createHorizontalStrut(15));
-        headerPanel.add(titleBox);
-        headerPanel.add(Box.createHorizontalGlue());
+        // ── Right side: form area ──
+        JPanel rightPanel = new JPanel(new GridBagLayout());
+        rightPanel.setBackground(BG_COLOR);
 
         // ── Form panel ──
         JPanel formPanel = new JPanel();
@@ -71,6 +45,18 @@ public class LoginForm extends javax.swing.JFrame {
             BorderFactory.createLineBorder(new Color(200, 210, 220), 1),
             BorderFactory.createEmptyBorder(25, 35, 25, 35)
         ));
+
+        // Logo + title above the fields (kept inside the form on the right)
+        JLabel lblLogo = new JLabel(new ImageIcon(loadAscotLogo(56)));
+        lblLogo.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel lblTitle = new JLabel("LOST AND FOUND SYSTEM");
+        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        lblTitle.setForeground(PRIMARY);
+
+        JLabel lblSubtitle = new JLabel("Aurora State College of Technology");
+        lblSubtitle.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        lblSubtitle.setForeground(TEXT_MUTED);
 
         JLabel lblSignIn = new JLabel("Sign in to your account");
         lblSignIn.setFont(new Font("Segoe UI", Font.PLAIN, 13));
@@ -112,18 +98,27 @@ public class LoginForm extends javax.swing.JFrame {
         GroupLayout fl = new GroupLayout(formPanel);
         formPanel.setLayout(fl);
         fl.setHorizontalGroup(fl.createParallelGroup(GroupLayout.Alignment.LEADING)
-            .addComponent(lblSignIn, GroupLayout.DEFAULT_SIZE, 300, Short.MAX_VALUE)
+            .addComponent(lblLogo)
+            .addComponent(lblTitle)
+            .addComponent(lblSubtitle)
+            .addComponent(lblSignIn, GroupLayout.DEFAULT_SIZE, 320, 320)
             .addComponent(lblStudentId)
-            .addComponent(txtStudentId, GroupLayout.DEFAULT_SIZE, 300, Short.MAX_VALUE)
+            .addComponent(txtStudentId, GroupLayout.DEFAULT_SIZE, 320, 320)
             .addComponent(lblHint)
             .addComponent(lblPassword)
-            .addComponent(txtPassword, GroupLayout.DEFAULT_SIZE, 300, Short.MAX_VALUE)
+            .addComponent(txtPassword, GroupLayout.DEFAULT_SIZE, 320, 320)
             .addGroup(fl.createSequentialGroup()
-                .addComponent(btnLogin, GroupLayout.PREFERRED_SIZE, 145, GroupLayout.PREFERRED_SIZE)
+                .addComponent(btnLogin, GroupLayout.PREFERRED_SIZE, 155, GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(btnRegister, GroupLayout.PREFERRED_SIZE, 145, GroupLayout.PREFERRED_SIZE))
+                .addComponent(btnRegister, GroupLayout.PREFERRED_SIZE, 155, GroupLayout.PREFERRED_SIZE))
         );
         fl.setVerticalGroup(fl.createSequentialGroup()
+            .addComponent(lblLogo)
+            .addGap(8)
+            .addComponent(lblTitle)
+            .addGap(2)
+            .addComponent(lblSubtitle)
+            .addGap(15)
             .addComponent(lblSignIn)
             .addGap(15)
             .addComponent(lblStudentId)
@@ -141,22 +136,21 @@ public class LoginForm extends javax.swing.JFrame {
                 .addComponent(btnRegister, GroupLayout.PREFERRED_SIZE, 38, GroupLayout.PREFERRED_SIZE))
         );
 
-        // ── Main layout: header on top of the background, transparent wrapper ──
-        getContentPane().add(headerPanel, BorderLayout.NORTH);
-
-        // Center the form in a transparent wrapper so the photo shows through
-        JPanel wrapper = new JPanel(new GridBagLayout());
-        wrapper.setOpaque(false);
+        // ── Split layout: background image on left, form on right ──
+        // fill = NONE keeps the form card at its preferred width when the window
+        // is maximized — the form stays centered instead of stretching across.
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(25, 50, 25, 50);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(25, 40, 25, 40);
+        gbc.fill = GridBagConstraints.NONE;
         gbc.weightx = 1.0;
-        gbc.anchor = GridBagConstraints.NORTH;
         gbc.weighty = 1.0;
-        wrapper.add(formPanel, gbc);
+        gbc.anchor = GridBagConstraints.CENTER;
+        rightPanel.add(formPanel, gbc);
 
-        getContentPane().add(wrapper, BorderLayout.CENTER);
-        setPreferredSize(new Dimension(820, 600));
+        root.add(bgPanel);
+        root.add(rightPanel);
+
+        setPreferredSize(new Dimension(1000, 620));
         pack();
 
         // ── Actions ──
