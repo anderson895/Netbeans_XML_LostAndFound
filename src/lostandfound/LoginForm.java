@@ -23,8 +23,12 @@ public class LoginForm extends javax.swing.JFrame {
     private void initComponents() {
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("ASCOT - Lost and Found System");
-        setMinimumSize(new Dimension(440, 460));
-        getContentPane().setBackground(BG_COLOR);
+        setMinimumSize(new Dimension(720, 520));
+
+        // Background photo as the root content pane (cover-scaled, no stretch)
+        BackgroundPanel bgPanel = new BackgroundPanel();
+        bgPanel.setLayout(new BorderLayout());
+        setContentPane(bgPanel);
 
         // ── Header panel ──
         JPanel headerPanel = new JPanel();
@@ -137,13 +141,12 @@ public class LoginForm extends javax.swing.JFrame {
                 .addComponent(btnRegister, GroupLayout.PREFERRED_SIZE, 38, GroupLayout.PREFERRED_SIZE))
         );
 
-        // ── Main layout using BorderLayout for responsiveness ──
-        getContentPane().setLayout(new BorderLayout());
+        // ── Main layout: header on top of the background, transparent wrapper ──
         getContentPane().add(headerPanel, BorderLayout.NORTH);
 
-        // Center the form in a wrapper
+        // Center the form in a transparent wrapper so the photo shows through
         JPanel wrapper = new JPanel(new GridBagLayout());
-        wrapper.setBackground(BG_COLOR);
+        wrapper.setOpaque(false);
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(25, 50, 25, 50);
         gbc.fill = GridBagConstraints.HORIZONTAL;
@@ -153,6 +156,7 @@ public class LoginForm extends javax.swing.JFrame {
         wrapper.add(formPanel, gbc);
 
         getContentPane().add(wrapper, BorderLayout.CENTER);
+        setPreferredSize(new Dimension(820, 600));
         pack();
 
         // ── Actions ──
@@ -202,40 +206,47 @@ public class LoginForm extends javax.swing.JFrame {
             try {
                 BufferedImage raw = javax.imageio.ImageIO.read(url);
                 if (raw != null) {
-                    BufferedImage whitened = whitenDarkBackground(raw);
-                    return whitened.getScaledInstance(size, size, Image.SCALE_SMOOTH);
+                    return raw.getScaledInstance(size, size, Image.SCALE_SMOOTH);
                 }
             } catch (java.io.IOException ignore) { /* fall through to drawn logo */ }
         }
         return buildAscotLogo(size);
     }
 
-    // Replace dark-navy background pixels with white so the inside of the logo reads as white.
-    // Anything that's roughly dark blue is treated as background; gold/yellow/red/etc. is kept.
-    private BufferedImage whitenDarkBackground(BufferedImage src) {
-        BufferedImage out = new BufferedImage(src.getWidth(), src.getHeight(), BufferedImage.TYPE_INT_ARGB);
-        for (int y = 0; y < src.getHeight(); y++) {
-            for (int x = 0; x < src.getWidth(); x++) {
-                int argb = src.getRGB(x, y);
-                int a = (argb >> 24) & 0xff;
-                int r = (argb >> 16) & 0xff;
-                int g = (argb >> 8)  & 0xff;
-                int b = (argb)       & 0xff;
-                if (a < 8) {
-                    out.setRGB(x, y, argb);
-                    continue;
-                }
-                // "Dark navy-ish": blue dominant and overall dark
-                int max = Math.max(r, Math.max(g, b));
-                boolean darkBlue = max < 110 && b >= r && b >= g - 15;
-                if (darkBlue) {
-                    out.setRGB(x, y, (a << 24) | 0xffffff); // opaque white
-                } else {
-                    out.setRGB(x, y, argb);
-                }
-            }
+    // Paints Background.png as a cover-scaled photo backdrop. No stretching:
+    // the image keeps its aspect ratio and is centered; any overflow is cropped.
+    private static class BackgroundPanel extends JPanel {
+        private final Image bg;
+        BackgroundPanel() {
+            setOpaque(true);
+            setBackground(new Color(236, 240, 245));
+            Image loaded = null;
+            try {
+                java.net.URL url = LoginForm.class.getResource("Background.png");
+                if (url == null) url = LoginForm.class.getResource("/lostandfound/Background.png");
+                if (url != null) loaded = javax.imageio.ImageIO.read(url);
+            } catch (java.io.IOException ignore) { }
+            this.bg = loaded;
         }
-        return out;
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            if (bg == null) return;
+            int pw = getWidth(), ph = getHeight();
+            int iw = bg.getWidth(null), ih = bg.getHeight(null);
+            if (iw <= 0 || ih <= 0) return;
+            // "Cover" scaling: preserve aspect ratio, fill panel, crop edges if needed
+            double scale = Math.max(pw / (double) iw, ph / (double) ih);
+            int dw = (int) Math.round(iw * scale);
+            int dh = (int) Math.round(ih * scale);
+            int dx = (pw - dw) / 2;
+            int dy = (ph - dh) / 2;
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
+                    RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            g2.drawImage(bg, dx, dy, dw, dh, this);
+            g2.dispose();
+        }
     }
 
     // Programmatic ASCOT logo used as a fallback when no PNG is present.
